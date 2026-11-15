@@ -38,7 +38,7 @@ function LoginRoute() {
 export default function App() {
   return (
     <StoreProvider>
-      <HashRouter>
+      <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ScrollTop />
         <Routes>
           <Route path="/connexion" element={<LoginRoute />} />
