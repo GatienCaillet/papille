@@ -17,12 +17,13 @@ export default function Recipes() {
   const [onlyLiked, setOnlyLiked] = useState(false);
   const [showUnv, setShowUnv] = useState(false);
   const [why, setWhy] = useState(false);
+  const [limit, setLimit] = useState(24);
 
   const cat = useMemo(() => catalog(state), [state]);
   const pass = x => {
     const r = x.r;
     if (q && !norm(`${r.name} ${r.ingredients.map(i => i.name).join(' ')}`).includes(norm(q))) return false;
-    if (time && r.time > time) return false;
+    if (time && (!r.time || r.time > time)) return false;
     if (type && r.type !== type) return false;
     if (origin && r.origin !== origin) return false;
     if (onlyLiked && !allLiked(r, state.answers)) return false;
@@ -71,10 +72,18 @@ export default function Recipes() {
           {filtersOn && <button type="button" className="btn btn-sm" onClick={() => { setQ(''); setTime(null); setType(''); setOrigin(''); setOnlyLiked(false); }}>Effacer les filtres</button>}
         </div>
       ) : (
-        <div className="rgrid">
-          {rows.map(x => <RecipeCard key={x.r.id} row={x} />)}
-          {unv.map(x => <RecipeCard key={x.r.id} row={x} unverified />)}
-        </div>
+        <>
+          <p className="small muted">{rows.length.toLocaleString('fr-FR')} recette{rows.length > 1 ? 's' : ''}{filtersOn ? ' pour ces filtres' : ''}</p>
+          <div className="rgrid">
+            {rows.slice(0, limit).map(x => <RecipeCard key={x.r.id} row={x} />)}
+            {rows.length < limit && unv.slice(0, limit - rows.length).map(x => <RecipeCard key={x.r.id} row={x} unverified />)}
+          </div>
+          {rows.length + unv.length > limit && (
+            <button type="button" className="btn" style={{ alignSelf: 'center' }} onClick={() => setLimit(l => l + 24)}>
+              Voir plus de recettes <span className="muted">· {(rows.length + unv.length - limit).toLocaleString("fr-FR")} restantes</span>
+            </button>
+          )}
+        </>
       )}
 
       <section className="card excluded">
@@ -85,15 +94,17 @@ export default function Recipes() {
         </button>
         {why && (
           <ul className="list excluded-list">
-            {cat.excluded.map(x => (
+            {[...cat.excluded, ...cat.withDisliked].slice(0, 40).map(x => (
               <li key={x.r.id}>
-                <span className="small b">{x.r.name}</span>
-                <span className="small muted">{x.check.reasons.map(rs => `${rs.kind.toLowerCase()} ${rs.label} : ${rs.where}`).join(' · ')}</span>
+                <Link to={`/recettes/${x.r.id}`} className="small b">{x.r.name}</Link>
+                <span className="small muted">
+                  {x.check.safe
+                    ? `vous n’aimez pas : ${x.disliked.join(', ').toLowerCase()}`
+                    : x.check.reasons.slice(0, 3).map(rs => `${rs.kind.toLowerCase()} ${rs.label} : ${rs.where}`).join(' · ')}
+                </span>
               </li>
             ))}
-            {cat.withDisliked.map(x => (
-              <li key={x.r.id}><span className="small b">{x.r.name}</span><span className="small muted">vous n’aimez pas : {x.disliked.join(', ').toLowerCase()}</span></li>
-            ))}
+            {hidden > 40 && <li><span className="small muted">… et {hidden - 40} autres.</span></li>}
           </ul>
         )}
       </section>

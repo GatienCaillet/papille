@@ -23,13 +23,13 @@ const EMPTY = {
 const F = (ref, qty) => ({ kind: 'food', ref, qty });
 const R = (ref, qty) => ({ kind: 'recipe', ref, qty });
 const HISTORY = [
-  [F('32140', 60), F('19041', 200), R('curry', 1.5), F('13039', 150), R('poulet', .5), F('19860', 125)],
-  [F('32140', 50), F('19041', 200), R('penne', 1), F('13039', 150), F('19860', 125)],
-  [F('7110', 100), F('22000', 100), R('chili', 1), F('13005', 120)],
-  [F('32140', 60), F('19041', 250), R('poulet', 1), F('13037', 150), R('risotto', 1)],
-  [F('7110', 80), F('19860', 125), R('curry', 1), F('13039', 150), R('ratatouille', 1)],
-  [F('32140', 50), F('19041', 200), R('veloute', 1.5), R('pancakes', 1), F('13005', 120)],
-  [F('7110', 100), F('22000', 50), R('bowl', 1), R('penne', 1)],
+  [F('32140', 60), F('19041', 200), R('dahl-de-lentilles-corail', 1.5), F('13039', 150), R('brochettes-de-poulet-marinees-au-yaourt', .5), F('19860', 125)],
+  [F('32140', 50), F('19041', 200), R('gratin-de-pates-au-brocoli', 1), F('13039', 150), F('19860', 125)],
+  [F('7110', 100), F('22000', 100), R('chili-con-carne', 1), F('13005', 120)],
+  [F('32140', 60), F('19041', 250), R('brochettes-de-poulet-marinees-au-yaourt', 1), F('13037', 150), R('risotto-au-citron', 1)],
+  [F('7110', 80), F('19860', 125), R('dahl-de-lentilles-corail', 1), F('13039', 150), R('ratatouille', 1)],
+  [F('32140', 50), F('19041', 200), R('soupe-au-potiron', 1.5), R('pancake', 1), F('13005', 120)],
+  [F('7110', 100), F('22000', 50), R('salade-de-boulgour-aux-pois-chiches', 1), R('gratin-de-pates-au-brocoli', 1)],
 ];
 
 /** Profil fictif de la démo (sans compte). */
@@ -44,7 +44,7 @@ function demoData() {
     opinions: { ...INITIAL_OPINIONS },
     journal,
     shopping: {
-      recipes: [{ id: 'curry', portions: 4 }, { id: 'chili', portions: 2 }],
+      recipes: [{ id: 'dahl-de-lentilles-corail', portions: 4 }, { id: 'ratatouille', portions: 2 }],
       manual: [{ key: newId(), name: 'Pain complet', qty: 1, unit: '', aisle: 'Boulangerie' }],
       checked: ['oignon|', 'tomates concassees|g'],
       removed: [],

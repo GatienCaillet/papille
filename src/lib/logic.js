@@ -1,19 +1,19 @@
-import { ALLERGEN_CODE, CIQUAL, FAMILLES, FOOD, FOODS, allergensOf, expand, namesOf } from '../data/foods.js';
-import { RECIPES } from '../data/recipes.js';
+import { ALLERGEN_CODE, CIQUAL, FAMILLES, FOOD, FOODS, allergensOf, descendants, expand, namesOf } from '../data/foods.js';
+import { RECIPE, RECIPES } from '../data/recipes.js';
 
 /* ---------- Texte ---------- */
 export const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/œ/g, 'oe').replace(/’/g, "'").trim();
 const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 export const fmt = n => nf.format(n);
-const PLURAL = new Set(['gousse', 'boîte', 'tranche', 'sachet', 'bouquet']);
-const MEASURED = ['g', 'cl', 'ml', 'kg', 'L', 'c. à s.', 'c. à c.'];
+const PLURAL = new Set(['gousse', 'boîte', 'tranche', 'sachet', 'bouquet', 'pincée', 'botte', 'feuille', 'branche', 'brin', 'morceau', 'verre', 'tasse', 'filet', 'pavé', 'boule', 'zeste', 'cuillère', 'poignée', 'barquette', 'tablette', 'rouleau', 'bol', 'paquet']);
+const MEASURED = ['g', 'cl', 'ml', 'dl', 'kg', 'L', 'c. à s.', 'c. à c.'];
 /** Quantité lisible. `buy` arrondit au-dessus ce qui s'achète à l'unité (1,5 oignon → 2). */
 export function fmtQty(qty, unit, buy = false) {
   const measured = MEASURED.includes(unit);
   const q = measured
     ? (unit === 'kg' || unit === 'L' ? Math.round(qty * 10) / 10 : unit.startsWith('c.') ? Math.round(qty * 2) / 2 : Math.round(qty))
     : buy ? Math.ceil(qty - 0.01) : Math.round(qty * 2) / 2;
-  const u = unit && PLURAL.has(unit) && q > 1 ? unit + 's' : unit;
+  const u = unit && PLURAL.has(unit) && q > 1 ? (unit === 'morceau' ? 'morceaux' : `${unit}s`) : unit;
   return u ? `${fmt(q)} ${u}` : fmt(q);
 }
 export const listFr = a => (a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} et ${a[a.length - 1]}`);
@@ -68,24 +68,47 @@ function hits(item, profile) {
   return out;
 }
 
-/** Vérifie une recette contre le profil, ingrédients composés compris. */
+/** Vérifie une recette contre le profil, ingrédients composés compris.
+ *  - exclue (`safe: false`) : un ingrédient heurte le profil à coup sûr ;
+ *  - impossible à vérifier (`unverifiable`) : une ligne vague (« huile ») peut désigner une variante
+ *    qui le heurte (huile d'amande douce), ou une ligne n'a pas d'ingrédient reconnu.
+ *  `why` explique le doute en une phrase. */
 export function checkRecipe(recipe, profile) {
   const reasons = [];
+  const doubts = [];
   let unknown = null;
+  const seen = new Set();
+  const push = (list, h, where) => { const k = `${h.kind}|${h.label}|${where}`; if (!seen.has(k)) { seen.add(k); list.push({ ...h, where }); } };
   for (const ing of recipe.ingredients) {
-    for (const h of hits(ing, profile)) reasons.push({ ...h, where: ing.name });
-    for (const c of ing.contains || []) for (const h of hits(c, profile)) reasons.push({ ...h, where: `${ing.name} (contient ${c.name})` });
-    if (ing.unknown && !unknown) unknown = ing.name;
+    const foods = ing.foods || (ing.food ? [ing.food] : []);
+    if (!foods.length) { if (!unknown) unknown = ing.name; continue; }
+    for (const food of foods) {
+      const direct = hits({ name: ing.name, food }, profile);
+      for (const h of direct) push(reasons, h, ing.name);
+      if (!direct.length && FOOD[food]?.categorie) {
+        for (const d of descendants(food)) {
+          const hs = hits({ name: FOOD[d].nom, food: d }, profile);
+          if (hs.length) { push(doubts, { ...hs[0], variant: FOOD[d].nom.toLowerCase(), category: FOOD[food].nom.toLowerCase() }, ing.name); break; }
+        }
+      }
+    }
   }
-  return { safe: reasons.length === 0, reasons, unverifiable: reasons.length === 0 && !!unknown, unknown, composed: recipe.ingredients.filter(i => i.contains || (i.food && FOOD[i.food]?.composants)) };
+  const composed = recipe.ingredients.filter(i => (i.foods || []).some(f => FOOD[f]?.composants));
+  const safe = reasons.length === 0;
+  const unverifiable = safe && (!!unknown || doubts.length > 0);
+  const why = !unverifiable ? null
+    : doubts.length ? `« ${cap(doubts[0].category)} » sans précision : peut être ${doubts[0].variant} (${doubts[0].kind.toLowerCase()} ${doubts[0].label.toLowerCase()})`
+    : `« ${unknown} » : ingrédient non reconnu`;
+  return { safe, reasons, doubts, unverifiable, unknown: unknown || doubts[0]?.where || null, why, composed };
 }
+const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
 export function foodAllowed(food, profile) {
   return hits({ name: food.nom, food: food.id }, profile).length === 0;
 }
 
 /* ---------- Goûts ---------- */
-const ingredientFoods = r => r.ingredients.flatMap(i => [i.food, ...(i.contains || []).map(c => c.food)]).filter(Boolean);
+const ingredientFoods = r => r.ingredients.flatMap(i => i.foods || [i.food]).filter(Boolean);
 
 let siblingsIndex = null;
 let siblingsFor = null;
@@ -105,9 +128,11 @@ export function foodScore(id, answers, opinions) {
   const a = answers[id];
   const direct = a === 'like' ? 50 : a === 'dislike' ? -50 : 0;
   const dishes = [];
-  for (const r of RECIPES) {
-    if (!r.main.includes(id) || (opinions[r.id] !== 'like' && opinions[r.id] !== 'dislike')) continue;
-    dishes.push({ name: r.name, delta: opinions[r.id] === 'like' ? 8 : -8 });
+  // On parcourt les avis (peu nombreux), pas les 1 010 recettes
+  for (const [rid, op] of Object.entries(opinions)) {
+    const r = RECIPE[rid];
+    if (!r || !r.main.includes(id) || (op !== 'like' && op !== 'dislike')) continue;
+    dishes.push({ name: r.name, delta: op === 'like' ? 8 : -8 });
   }
   const peers = siblings(id).filter(f => f.id !== id && (answers[f.id] === 'like' || answers[f.id] === 'dislike'));
   const group = peers.length ? Math.round((peers.reduce((s, f) => s + (answers[f.id] === 'like' ? 1 : -1), 0) / peers.length) * 15) : 0;
@@ -127,29 +152,35 @@ export const dislikedIn = (recipe, answers) => [...new Set(ingredientFoods(recip
 export const unknownIn = (recipe, answers) => [...new Set(recipe.main.filter(f => !answers[f]))].map(f => FOOD[f].nom);
 export const allLiked = (recipe, answers) => recipe.main.every(f => answers[f] === 'like');
 
-/** Recettes visibles : sûres, sans aliment « je n'aime pas ». */
+/** Recettes visibles : sûres, sans aliment « je n'aime pas ». Mémorisé : recalculé seulement si
+ *  le profil, les goûts ou les avis changent (1 010 recettes vérifiées à chaque fois). */
+let memo = null;
 export function catalog(state) {
   const { profile, answers, opinions } = state;
+  if (memo && memo.profile === profile && memo.answers === answers && memo.opinions === opinions && memo.recipes === RECIPES) return memo.value;
   const rows = RECIPES.map(r => ({ r, check: checkRecipe(r, profile), disliked: dislikedIn(r, answers), match: recipeMatch(r, answers, opinions) }));
-  return {
-    visible: rows.filter(x => x.check.safe && !x.check.unverifiable && x.disliked.length === 0 && x.r.img).sort((a, b) => b.match - a.match),
+  const value = {
+    visible: rows.filter(x => x.check.safe && !x.check.unverifiable && x.disliked.length === 0).sort((a, b) => b.match - a.match),
     unverifiable: rows.filter(x => x.check.unverifiable && x.disliked.length === 0),
     excluded: rows.filter(x => !x.check.safe),
     withDisliked: rows.filter(x => x.check.safe && x.disliked.length > 0),
   };
+  memo = { profile, answers, opinions, recipes: RECIPES, value };
+  return value;
 }
 
-/** Aliments inconnus proches des goûts, avec des recettes sûres pour les goûter. */
+/** Aliments inconnus proches des goûts, avec des recettes sûres pour les goûter.
+ *  Les parcours de découverte du catalogue (niveaux 1 à 5) passent en premier, puis les recettes
+ *  où l'aliment est un ingrédient principal. */
 export function discoveries(state) {
   const { profile, answers, opinions } = state;
   const { visible } = catalog(state);
-  return FOODS.filter(f => !answers[f.id] && foodAllowed(f, profile))
-    .map(f => {
-      const s = foodScore(f.id, answers, opinions);
-      const recipes = visible.filter(x => ingredientFoods(x.r).includes(f.id));
-      return { food: f, score: s, recipes };
-    })
-    .filter(x => x.recipes.length && x.score.total > 0)
+  const byFood = new Map();
+  for (const x of visible) for (const f of new Set(ingredientFoods(x.r))) (byFood.get(f) || byFood.set(f, []).get(f)).push(x);
+  const rank = (x, id) => (x.r.discovery?.aliment === id ? x.r.discovery.niveau : 10) * 1000 + (x.r.main.includes(id) ? 0 : 500) - x.match;
+  return FOODS.filter(f => !answers[f.id] && byFood.has(f.id) && foodAllowed(f, profile))
+    .map(f => ({ food: f, score: foodScore(f.id, answers, opinions), recipes: [...byFood.get(f.id)].sort((a, b) => rank(a, f.id) - rank(b, f.id)).slice(0, 6) }))
+    .filter(x => x.score.total > 0)
     .sort((a, b) => b.score.total - a.score.total);
 }
 
@@ -225,7 +256,12 @@ export function buildShopping(shopping, recipes) {
   for (const { id, portions } of shopping.recipes) {
     const r = recipes[id];
     if (!r) continue;
-    for (const i of r.ingredients) add(i.name, (i.qty * portions) / r.portions, i.unit, i.aisle, r.name);
+    for (const i of r.ingredients) {
+      if (i.foods?.length === 1 && i.foods[0] === 'eau') continue;
+      // Nom du référentiel quand la ligne désigne un seul aliment : « 2 oignons » et « 1 oignon » fusionnent
+      const name = i.foods?.length === 1 && FOOD[i.foods[0]] ? FOOD[i.foods[0]].nom : i.name;
+      add(name, ((i.qty ?? 0) * portions) / r.portions, i.unit, i.aisle, r.name);
+    }
   }
   for (const m of shopping.manual) add(m.name, m.qty, m.unit, m.aisle, m.base ? 'Toujours acheter' : 'Ajout manuel');
   const removed = shopping.removed || [];

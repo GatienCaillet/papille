@@ -5,7 +5,7 @@ import { useStore } from '../store.jsx';
 import { BASE_COUNT, FAMILLES, FOOD, FOODS, isBase } from '../data/foods.js';
 import { RECIPE } from '../data/recipes.js';
 import { catalog, foodAllowed, listFr } from '../lib/logic.js';
-import { FoodTile, Img, PageHeader, Switch } from '../components/ui.jsx';
+import { FoodTile, Img, PageHeader, Switch, RecipeVisual } from '../components/ui.jsx';
 
 export function TasteTabs() {
   return (
@@ -150,7 +150,7 @@ export default function Swipe() {
                 <li key={i} className="last-row">
                   <div className="row between"><span className="small b">{name}</span><span className={`badge badge-${tone}`}>{LABEL[l.value]}</span></div>
                   {l.card.kind === 'dish' && l.value !== 'unsure' && (
-                    <span className="xs muted">{l.value === 'like' ? '+8' : '−8'} sur {listFr(RECIPE[l.card.ref].main.map(m => FOOD[m].nom.toLowerCase()))}</span>
+                    <span className="xs muted">{l.value === 'like' ? '+8' : '−8'} sur {listFr((RECIPE[l.card.ref]?.main || []).map(m => FOOD[m]?.nom.toLowerCase()).filter(Boolean))}</span>
                   )}
                 </li>
               );
@@ -168,11 +168,11 @@ function SwipeCard({ item, behind }) {
     const r = RECIPE[item.ref];
     return (
       <>
-        <div className="sc-media"><Img id={r.img} alt={r.name} w={640} eager /></div>
+        <div className="sc-media"><RecipeVisual r={r} eager /></div>
         <div className="sc-body">
           <span className="row" style={{ gap: 6 }}><span className="badge badge-brand">Plat</span><span className="xs muted">{r.origin}</span></span>
           <span className="sc-title">{r.name}</span>
-          <span className="small muted">{r.ingredients.slice(0, 4).map(i => i.name.toLowerCase()).join(', ')}</span>
+          <span className="small muted">{r.ingredients.filter(i => !i.optional).slice(0, 4).map(i => i.name.toLowerCase()).join(", ")}</span>
         </div>
       </>
     );

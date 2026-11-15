@@ -15,14 +15,16 @@ Proposition A « Tableau de bord » : connexion, profil, swipe, mes goûts, rece
 - **Démo sans compte** : bouton « Essayer la démo » sur l’écran de connexion, profil fictif gardé dans le navigateur.
 - **Déjà réel** : vérification de sécurité (allergènes, régimes, interdits, ingrédients composés comme le pesto ou le bouillon), recettes non vérifiables masquées, scores des aliments, Mifflin-St Jeor, apports du jour et sur 7 jours, fusion des courses.
 - **Aliments réels** : 1 003 ingrédients du référentiel Bouchée (allergènes hérités, composants cachés, taxonomie) avec leurs nutriments CIQUAL 2025 ; base du swipe = les 200 ingrédients les plus utilisés dans les 1 010 recettes du catalogue ; journal sur toute la table CIQUAL (3 484 aliments).
-- **Encore simulé** : recherche web (résultats d’exemple), import de recettes, recettes (onze recettes de démonstration).
+- **Recettes réelles** : les 1 010 recettes du catalogue Bouchée, vérifiées une à une contre le profil (ingrédients composés et lignes vagues compris : une ligne « huile » sans précision rend la recette « impossible à vérifier » si une variante heurte le profil). Type de plat, origine et nutriments par portion sont estimés par le script de conversion ; 548 recettes rédigées pour Bouchée sont signalées « pas encore testées ».
+- **Encore simulé** : recherche web (résultats d’exemple) et import de recettes.
 
-## Données d’aliments
+## Données d’aliments et de recettes
 
-`public/data/aliments.json` et `public/data/ciqual.json` sont générés par :
+`public/data/aliments.json`, `public/data/ciqual.json` et `public/data/recettes.json` sont générés par :
 
 ```bash
 node scripts/build-foods.mjs <dossier-sources>
+node scripts/build-recipes.mjs <dossier-sources>
 ```
 
 Le dossier contient la table « Table Ciqual 2025_FR_2025_11_03.xlsx » décompressée dans `xlsx/` (Anses, Licence Ouverte 2.0, doi:10.57745/RDMHWY) et `ingredients.json` + `recettes.json` de https://gatiencaillet.github.io/bouchee-catalogue/v1/. Les codes CIQUAL 2020 absents de la version 2025 ont un équivalent choisi dans le script.
@@ -49,7 +51,13 @@ Chaque push sur `main` construit et publie le site (`.github/workflows/deploy.ym
 - `PRODUCT.md` : le produit, ses règles, ses contraintes.
 - `DESIGN.md` : le système visuel (couleurs, typo, composants).
 - `src/lib/logic.js` : sécurité, goûts, nutrition, courses.
-- `src/data/` : aliments et recettes de démonstration.
+- `src/data/` : chargement des aliments, de la table CIQUAL et des recettes (`public/data/`).
+- `scripts/` : conversion des sources (CIQUAL, catalogue Bouchée) en données de l’app.
 - `public/wireframes/` : les trois wireframes de l’étape 1.
 
-Photos de plats : Unsplash (licence Unsplash).
+## Sources et licences
+
+- Recettes : adaptations du *Livre de cuisine* de Wikibooks (CC BY-SA 3.0 ou 4.0 selon la révision) et recettes rédigées pour Bouchée (CC BY-SA 4.0), via le catalogue Bouchée. `public/data/recettes.json` reste sous CC BY-SA ; chaque fiche de l’app cite sa source, ses auteurs, sa licence et ses modifications.
+- Photos de recettes : Wikimedia Commons, auteur et licence indiqués sur chaque fiche.
+- Nutriments : Table Ciqual 2025, Anses (Licence Ouverte 2.0).
+- Photo de l’écran de connexion : Unsplash (licence Unsplash).

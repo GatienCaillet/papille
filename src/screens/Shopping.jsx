@@ -4,7 +4,7 @@ import { Check, ListPlus, Plus, ShoppingBasket, Trash2, X } from 'lucide-react';
 import { useStore } from '../store.jsx';
 import { RECIPE } from '../data/recipes.js';
 import { AISLES, buildShopping, fmtQty } from '../lib/logic.js';
-import { Img, PageHeader, Stepper } from '../components/ui.jsx';
+import { Img, PageHeader, Stepper, RecipeVisual } from '../components/ui.jsx';
 
 export default function Shopping() {
   const { state, toggleChecked, clearChecked, addManual, addAlways, setShoppingPortions, addAlwaysItem, removeAlwaysItem, notify } = useStore();
@@ -62,7 +62,7 @@ export default function Shopping() {
                         <span className="item-name">{it.name}</span>
                         {it.sources.length > 0 && <span className="xs muted">{it.sources.length > 1 ? `Fusionné · ${it.sources.join(' + ')}` : it.sources[0]}</span>}
                       </span>
-                      <span className="small muted num nowrap">{fmtQty(it.qty, it.unit, true)}</span>
+                      <span className="small muted num nowrap">{it.qty > 0 ? fmtQty(it.qty, it.unit, true) : ""}</span>
                     </label>
                   </li>
                 ))}
@@ -76,11 +76,11 @@ export default function Shopping() {
             <h2 className="h3">Depuis vos recettes</h2>
             {state.shopping.recipes.length === 0 && <p className="small muted">Ajoutez une recette depuis sa fiche.</p>}
             <ul className="list">
-              {state.shopping.recipes.map(({ id, portions }) => {
+              {state.shopping.recipes.filter(({ id }) => RECIPE[id]).map(({ id, portions }) => {
                 const r = RECIPE[id];
                 return (
                   <li key={id} className="shop-recipe">
-                    <Link to={`/recettes/${id}`} className="entry-img"><Img id={r.img} alt="" w={96} /></Link>
+                    <Link to={`/recettes/${id}`} className="entry-img"><RecipeVisual r={r} /></Link>
                     <span className="stack grow" style={{ gap: 4 }}>
                       <Link to={`/recettes/${id}`} className="small b">{r.name}</Link>
                       <span className="row" style={{ gap: 8 }}><Stepper label={`Portions de ${r.name}`} value={portions} min={0} max={20} onChange={v => setShoppingPortions(id, v)} /><span className="xs muted">portions</span></span>

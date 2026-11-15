@@ -4,7 +4,7 @@ import { Clock, Compass, Heart, HelpCircle, ThumbsDown, X } from 'lucide-react';
 import { useStore } from '../store.jsx';
 import { FAMILLES } from '../data/foods.js';
 import { discoveries, reasonFor } from '../lib/logic.js';
-import { FoodTile, Img, PageHeader, Score } from '../components/ui.jsx';
+import { FoodTile, Img, PageHeader, Score, RecipeVisual } from '../components/ui.jsx';
 
 export default function Discover() {
   const { state, answer, opinion, notify } = useStore();
@@ -57,10 +57,11 @@ export default function Discover() {
                 const op = state.opinions[r.id];
                 return (
                   <article key={r.id} className="card rcard">
-                    <Link to={`/recettes/${r.id}`} className="rcard-img"><Img id={r.img} alt="" w={480} /><span className="badge badge-on-photo">{r.type}</span></Link>
+                    <Link to={`/recettes/${r.id}`} className="rcard-img"><RecipeVisual r={r} /><span className="badge badge-on-photo">{r.discovery?.aliment === sel.food.id && r.discovery.niveau ? `Niveau ${r.discovery.niveau} sur 5` : r.type}</span></Link>
                     <div className="rcard-body">
                       <Link to={`/recettes/${r.id}`} className="h3">{r.name}</Link>
-                      <span className="rcard-meta"><span><Clock size={14} /> {r.time} min</span><span className="match">{match} % pour vous</span></span>
+                      {r.discovery?.aliment === sel.food.id && r.discovery.pourquoi && <span className="xs muted">{r.discovery.pourquoi}</span>}
+                      <span className="rcard-meta">{r.time && <span><Clock size={14} /> {r.time} min</span>}<span className="match">{match} % pour vous</span></span>
                       <div className="row" style={{ gap: 6, marginTop: 'auto', paddingTop: 8 }}>
                         <button type="button" className="btn btn-sm op-like" aria-pressed={op === 'like'} onClick={() => opinion(r.id, 'like')}><Heart size={14} /> J’aime</button>
                         <button type="button" className="btn btn-sm op-dislike" aria-pressed={op === 'dislike'} onClick={() => opinion(r.id, 'dislike')}><ThumbsDown size={14} /> J’aime pas</button>

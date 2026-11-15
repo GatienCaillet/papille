@@ -6,12 +6,13 @@ import './styles/screens.css';
 import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { loadCiqual, loadFoods } from './data/foods.js';
+import { loadRecipes } from './data/recipes.js';
 
 const root = createRoot(document.getElementById('root'));
 const render = node => root.render(<StrictMode><ErrorBoundary>{node}</ErrorBoundary></StrictMode>);
 
 // Le référentiel d'aliments et la table CIQUAL sont nécessaires à tous les écrans (sécurité, apports).
-Promise.all([loadFoods(), loadCiqual()])
+Promise.all([loadFoods(), loadCiqual(), loadRecipes()])
   .then(() => render(<App />))
   .catch(e => render(<LoadError message={e.message} />));
 

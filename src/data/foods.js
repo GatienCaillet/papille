@@ -41,6 +41,7 @@ export async function loadFoods() {
     .sort((a, b) => (a.rang || 1e6) - (b.rang || 1e6) || a.nom.localeCompare(b.nom, 'fr'));
   SOURCES = data.sources;
   cache.clear();
+  childrenIndex = null;
 }
 
 export const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : s);
@@ -62,6 +63,18 @@ export function expand(id) {
   };
   visit(id);
   cache.set(id, out);
+  return out;
+}
+/** Descendants d'une catégorie (« huile » → huile d'olive, huile d'arachide…). */
+let childrenIndex = null;
+export function descendants(id) {
+  if (!childrenIndex) {
+    childrenIndex = new Map();
+    for (const f of Object.values(FOOD)) if (f.parent) (childrenIndex.get(f.parent) || childrenIndex.set(f.parent, []).get(f.parent)).push(f.id);
+  }
+  const out = [];
+  const visit = x => { for (const c of childrenIndex.get(x) || []) { out.push(c); visit(c); } };
+  visit(id);
   return out;
 }
 export const allergensOf = id => new Set([...expand(id)].flatMap(x => FOOD[x]?.allergenes || []));

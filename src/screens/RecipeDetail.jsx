@@ -1,21 +1,27 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Clock, ExternalLink, Flame, Heart, NotebookPen, ShieldCheck, ShoppingBasket, Sparkles, ThumbsDown, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Clock, Compass, ExternalLink, Flame, FlaskConical, Heart, NotebookPen, ShieldCheck, ShoppingBasket, Sparkles, ThumbsDown, TriangleAlert } from 'lucide-react';
 import { useStore } from '../store.jsx';
 import { RECIPE } from '../data/recipes.js';
 import { FOOD } from '../data/foods.js';
 import { checkRecipe, dayKey, fmt, fmtQty, listFr, needs, NUTRIENTS, recipeMatch, today } from '../lib/logic.js';
-import { Img, Stepper } from '../components/ui.jsx';
+import { RecipeVisual, Stepper } from '../components/ui.jsx';
 
 function Mark({ ing, answers }) {
-  if (ing.contains) return <span className="badge badge-brand">composé, vérifié</span>;
-  if (ing.unknown) return <span className="badge badge-bad"><TriangleAlert size={12} /> non vérifiable</span>;
-  const a = ing.food && answers[ing.food];
+  const foods = ing.foods || [];
+  if (!foods.length) return <span className="badge badge-bad"><TriangleAlert size={12} /> non vérifiable</span>;
+  if (foods.length === 1 && FOOD[foods[0]]?.composants) return <span className="badge badge-brand">composé, vérifié</span>;
+  const a = foods.map(f => answers[f]).find(Boolean);
   if (a === 'like') return <span className="badge badge-ok"><Heart size={11} /> aimé</span>;
   if (a === 'unsure') return <span className="badge badge-warn">pas sûr</span>;
-  if (ing.food && !a) return <span className="badge">inconnu</span>;
+  if (foods.length === 1 && FOOD[foods[0]] && !FOOD[foods[0]].categorie && !a) return <span className="badge">inconnu</span>;
   return null;
 }
+
+const contents = ing => {
+  const f = ing.foods?.length === 1 ? FOOD[ing.foods[0]] : null;
+  return f?.composants?.length ? f.composants.map(c => FOOD[c]?.nom.toLowerCase() || c).join(', ') : null;
+};
 
 export default function RecipeDetail() {
   const { id } = useParams();
@@ -29,10 +35,11 @@ export default function RecipeDetail() {
   const ref = needs(state.profile);
   const op = state.opinions[r.id];
   const k = portions / r.portions;
+  const wiki = /wikibooks/.test(r.source.url || '');
 
   const setOp = v => {
     opinion(r.id, v);
-    if (op !== v) notify(v === 'like' ? `Noté : vous aimez. ${listFr(r.main.map(m => FOOD[m].nom.toLowerCase()))} montent.` : 'Noté : vous n’aimez pas ce plat.');
+    if (op !== v) notify(v === 'like' ? `Noté : vous aimez. ${listFr(r.main.map(m => FOOD[m]?.nom.toLowerCase()).filter(Boolean))} montent.` : 'Noté : vous n’aimez pas ce plat.');
   };
 
   const safety = !check.safe ? (
@@ -43,14 +50,16 @@ export default function RecipeDetail() {
   ) : check.unverifiable ? (
     <div className="alert alert-bad" role="alert">
       <TriangleAlert size={20} />
-      <div><b>Impossible à vérifier.</b> « {check.unknown} » n’a pas de composition connue : elle peut contenir un allergène. Cette recette reste masquée par défaut.</div>
+      <div><b>Impossible à vérifier.</b> {check.why}. Précisez l’ingrédient avant de cuisiner ; cette recette reste masquée par défaut.</div>
     </div>
   ) : (
     <div className="alert alert-ok">
       <ShieldCheck size={20} />
       <div>
-        <b>Vérifiée pour votre profil.</b> {r.ingredients.length} ingrédients{check.composed.length ? `, dont ${check.composed.length} composé${check.composed.length > 1 ? 's' : ''} décomposé${check.composed.length > 1 ? 's' : ''}` : ''}.
-        {' '}Rien de : {listFr([...state.profile.allergens, ...state.profile.regimes.map(x => x.toLowerCase()), ...state.profile.forbidden].map(x => x.toLowerCase()))}.
+        <b>Vérifiée pour votre profil.</b> {r.ingredients.length} lignes d’ingrédients{check.composed.length ? `, dont ${check.composed.length} composée${check.composed.length > 1 ? 's' : ''} décomposée${check.composed.length > 1 ? 's' : ''}` : ''}.
+        {(state.profile.allergens.length + state.profile.regimes.length + state.profile.forbidden.length) > 0
+          ? <> Rien de : {listFr([...state.profile.allergens, ...state.profile.regimes, ...state.profile.forbidden].map(x => x.toLowerCase()))}.</>
+          : <> Votre profil ne contient encore ni allergie, ni régime, ni interdit.</>}
       </div>
     </div>
   );
@@ -73,14 +82,20 @@ export default function RecipeDetail() {
       <Link to="/recettes" className="back small"><ArrowLeft size={16} /> Recettes</Link>
 
       <div className="rd-top">
-        <div className="rd-img">{r.img ? <Img id={r.img} alt={r.name} w={900} /> : <div className="noimg" />}</div>
+        <div className="rd-img"><RecipeVisual r={r} full eager /></div>
         <div className="stack" style={{ gap: 16 }}>
-          <div className="row" style={{ gap: 6 }}><span className="badge badge-brand">{r.type}</span><span className="badge">{r.origin}</span></div>
+          <div className="row row-wrap" style={{ gap: 6 }}>
+            <span className="badge badge-brand">{r.type}</span>
+            {r.origin !== 'Non précisée' && <span className="badge">{r.origin}</span>}
+            {r.generated && <span className="badge badge-warn"><FlaskConical size={12} /> pas encore testée</span>}
+          </div>
           <h1 className="rd-title">{r.name}</h1>
-          <a className="small muted row" style={{ gap: 4 }} href={`https://www.${r.source}`} target="_blank" rel="noreferrer">{r.source} <ExternalLink size={13} /></a>
+          <a className="small muted row" style={{ gap: 4 }} href={r.source.url} target="_blank" rel="noreferrer">
+            {wiki ? 'Livre de cuisine, Wikibooks' : 'Recette rédigée pour Bouchée'} <ExternalLink size={13} />
+          </a>
           <div className="rd-stats">
-            <div><Clock size={17} /><b className="num">{r.time} min</b><span>préparation</span></div>
-            <div><Flame size={17} /><b className="num">{r.n[0]} kcal</b><span>par portion</span></div>
+            <div><Clock size={17} /><b className="num">{r.time ? `${r.time} min` : '—'}</b><span>au total</span></div>
+            <div><Flame size={17} /><b className="num">{r.nutritionUnsure ? '—' : `${Math.round(r.n[0])} kcal`}</b><span>par portion (estimé)</span></div>
             <div><Sparkles size={17} /><b className="num">{match} %</b><span>pour vous</span></div>
           </div>
           <div className="row" style={{ gap: 8 }}>
@@ -89,6 +104,12 @@ export default function RecipeDetail() {
             <button type="button" className="btn btn-sm op-dislike" aria-pressed={op === 'dislike'} onClick={() => setOp('dislike')}><ThumbsDown size={15} /> J’aime pas</button>
           </div>
           {safety}
+          {r.discovery && (
+            <div className="alert alert-disc">
+              <Compass size={20} />
+              <div><b>Parcours découverte : {FOOD[r.discovery.aliment]?.nom.toLowerCase() || r.discovery.aliment}{r.discovery.niveau ? `, niveau ${r.discovery.niveau} sur 5` : ''}.</b> {r.discovery.pourquoi || r.discovery.conseil}</div>
+            </div>
+          )}
           {actions}
         </div>
       </div>
@@ -96,33 +117,42 @@ export default function RecipeDetail() {
       <section className="card card-pad rd-body">
         <div className="row between row-wrap" style={{ gap: 12 }}>
           <h2>Pour <span className="num">{portions}</span> portion{portions > 1 ? 's' : ''}</h2>
-          <Stepper label="Portions" value={portions} onChange={setPortions} min={1} max={12} />
+          <Stepper label="Portions" value={portions} onChange={setPortions} min={1} max={24} />
         </div>
         <div className="rd-cols">
           <div>
             <h3 className="rd-sub">Ingrédients</h3>
             <ul className="list">
-              {r.ingredients.map(i => (
-                <li key={i.name} className="ing">
+              {r.ingredients.map((i, n) => (
+                <li key={n} className="ing">
                   <div className="row between" style={{ gap: 10 }}>
-                    <span className="row row-wrap" style={{ gap: 8 }}>{i.name} <Mark ing={i} answers={state.answers} /></span>
-                    <span className="small muted num nowrap">{fmtQty(i.qty * k, i.unit)}</span>
+                    <span className="row row-wrap" style={{ gap: 8 }}>{i.name}{i.optional && <span className="xs muted">(facultatif)</span>} <Mark ing={i} answers={state.answers} /></span>
+                    {i.qty != null && <span className="small muted num nowrap">{fmtQty(i.qty * k, i.unit)}</span>}
                   </div>
-                  {i.contains && <span className="xs muted">Contient : {i.contains.map(c => c.name).join(', ')}</span>}
+                  {contents(i) && <span className="xs muted">Contient : {contents(i)}</span>}
                 </li>
               ))}
             </ul>
           </div>
           <div>
             <h3 className="rd-sub">Par portion <span className="muted" style={{ fontWeight: 500 }}>· part de votre besoin</span></h3>
-            <ul className="list">
-              {NUTRIENTS.filter(n => ['kcal', 'prot', 'fib', 'fer', 'mg', 'vitc', 'vitd'].includes(n.key)).map(n => (
-                <li key={n.key} className="row between ing">
-                  <span>{n.label}</span>
-                  <span className="row" style={{ gap: 14 }}><b className="num small">{fmt(r.n[n.i])} {n.unit}</b><span className="small muted num" style={{ width: 40, textAlign: 'right' }}>{Math.round((r.n[n.i] / ref[n.i]) * 100)} %</span></span>
-                </li>
-              ))}
-            </ul>
+            {r.nutritionUnsure ? (
+              <p className="small muted" style={{ padding: '10px 2px' }}>Valeurs non estimables : les portions ou les quantités de la source semblent erronées.</p>
+            ) : (
+              <>
+                <ul className="list">
+                  {NUTRIENTS.filter(n => ['kcal', 'prot', 'fib', 'fer', 'mg', 'vitc', 'vitd'].includes(n.key)).map(n => (
+                    <li key={n.key} className="row between ing">
+                      <span>{n.label}</span>
+                      <span className="row" style={{ gap: 14 }}><b className="num small">{fmt(r.n[n.i])} {n.unit}</b><span className="small muted num" style={{ width: 40, textAlign: 'right' }}>{Math.round((r.n[n.i] / ref[n.i]) * 100)} %</span></span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="xs muted" style={{ marginTop: 8 }}>
+                  Estimé à partir des quantités et de la table Ciqual 2025{r.coverage < 0.7 ? ` ; seules ${Math.round(r.coverage * 100)} % des lignes ont pu être chiffrées, les valeurs sont donc sous-estimées` : ''}.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -132,6 +162,16 @@ export default function RecipeDetail() {
         <ol className="steps">
           {r.steps.map((s, i) => <li key={i} className="card"><span className="step-n num">{i + 1}</span><p>{s}</p></li>)}
         </ol>
+      </section>
+
+      <section className="credits xs muted">
+        <p>
+          <b>Source :</b> <a href={r.source.url} target="_blank" rel="noreferrer">{r.source.title}</a>
+          {r.source.history ? <> · <a href={r.source.history} target="_blank" rel="noreferrer">auteurs ({r.source.authors})</a></> : r.source.authors ? ` · ${r.source.authors}` : ''}
+          {' '}· licence {r.source.licence}.
+          {r.source.changes ? ` ${r.source.changes}` : ''}
+        </p>
+        {r.photo && <p><b>Photo :</b> <a href={r.photo.page} target="_blank" rel="noreferrer">{r.photo.a}</a>, {r.photo.l}, via Wikimedia Commons.</p>}
       </section>
     </>
   );

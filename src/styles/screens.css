@@ -42,6 +42,10 @@
 .alert-ok svg { color: var(--ok); }
 .alert-bad { background: var(--bad-soft); color: #8a2a1f; border: 1.5px solid var(--bad); }
 .alert-bad svg { color: var(--bad); }
+.alert-disc { background: var(--sage); color: var(--ink); }
+.alert-disc svg { color: var(--brand); }
+.credits { display: flex; flex-direction: column; gap: 4px; padding: 4px 2px 8px; max-width: 90ch; }
+.credits a { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---------- Connexion ---------- */
 .login { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--ground); }

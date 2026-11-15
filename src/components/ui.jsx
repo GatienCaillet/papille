@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Apple, Bean, Candy, Carrot, Clock, Droplet, Drumstick, Fish, Flame, Leaf, Milk, Minus, Plus, Salad, Search, Soup, Sprout, TriangleAlert, Wheat, X } from 'lucide-react';
-import { FAMILLES } from '../data/foods.js';
+import { FAMILLES, FOOD } from '../data/foods.js';
 
 const Icons = { Apple, Bean, Candy, Carrot, Droplet, Drumstick, Fish, Leaf, Milk, Salad, Soup, Sprout, Wheat };
 const TINT_ICON = { legume: 'Carrot', fruit: 'Apple', feculent: 'Wheat', legumineuse: 'Bean', viande: 'Drumstick', poisson: 'Fish', laitier: 'Milk', epice: 'Leaf', sauce: 'Soup', sucre: 'Candy', gras: 'Droplet' };
@@ -92,6 +92,19 @@ export function Bar({ pct, tone }) {
   return <span className={`bar c-${tone}`} role="presentation"><i style={{ width: `${Math.min(100, pct)}%` }} /></span>;
 }
 
+/** Illustration d'une recette : sa photo (Wikimedia Commons) si elle en a une, sinon un aplat
+ *  teinté de la famille de son ingrédient principal. */
+export function RecipeVisual({ r, full, eager }) {
+  if (r?.photo) {
+    const src = full ? r.photo.full : r.photo.full.replace(/width=\d+/, 'width=640');
+    return <img src={src} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" draggable="false" />;
+  }
+  const f = FOOD[r?.main?.[0]];
+  const t = FAMILLES[f?.famille]?.tint || 'sauce';
+  const Icon = Icons[FAMILLES[f?.famille]?.icon] || Soup;
+  return <span className="rv" style={{ background: `var(--g-${t})`, color: `var(--g-${t}-ink)` }} aria-hidden="true"><Icon /></span>;
+}
+
 export function Img({ id, alt, w = 640, eager }) {
   return <img src={photo(id, w)} srcSet={`${photo(id, w)} 1x, ${photo(id, w * 2)} 2x`} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" draggable="false" />;
 }
@@ -101,18 +114,18 @@ export function RecipeCard({ row, unverified }) {
   return (
     <Link to={`/recettes/${r.id}`} className={`card rcard ${unverified ? 'is-unverified' : ''}`}>
       <div className="rcard-img">
-        <Img id={r.img} alt="" w={480} />
+        <RecipeVisual r={r} />
         <span className="badge badge-on-photo">{r.type}</span>
       </div>
       <div className="rcard-body">
-        <span className="xs muted">{r.origin}</span>
+        <span className="xs muted">{r.origin === 'Non précisée' ? r.type : r.origin}{r.generated ? ' · non testée' : ''}</span>
         <span className="h3">{r.name}</span>
         <span className="rcard-meta">
-          <span><Clock size={14} /> {r.time} min</span>
-          <span><Flame size={14} /> {r.n[0]} kcal</span>
+          {r.time && <span><Clock size={14} /> {r.time} min</span>}
+          {!r.nutritionUnsure && <span><Flame size={14} /> {Math.round(r.n[0])} kcal</span>}
         </span>
         {unverified ? (
-          <span className="unv-banner"><TriangleAlert size={15} /> Impossible à vérifier : « {check.unknown} », composition inconnue.</span>
+          <span className="unv-banner"><TriangleAlert size={15} /> Impossible à vérifier : {check.why}.</span>
         ) : (
           <span className="rcard-foot">
             <span className="muted">Pour vous</span>
