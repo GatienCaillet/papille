@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Papille · Wireframes</title>
+<link rel="stylesheet" href="wireframes/wf.css">
+<style>
+  .hm{max-width:1180px;margin:0 auto;padding:56px 24px 96px}
+  .hm h1{font-size:clamp(40px,7vw,76px);letter-spacing:-.04em;line-height:.95;margin:10px 0 18px}
+  .hm .lead{font-size:18px;color:var(--ink2);max-width:60ch}
+  .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:44px}
+  .cardx{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:transform .2s,box-shadow .2s}
+  .cardx:hover{transform:translateY(-3px);box-shadow:0 20px 40px -24px rgba(0,0,0,.3)}
+  .prev{height:210px;border-bottom:1px solid var(--line);overflow:hidden;position:relative;background:var(--fill)}
+  .prev iframe{position:absolute;top:0;left:0;width:1280px;height:1000px;border:0;transform:scale(.29);transform-origin:0 0;pointer-events:none}
+  .cbody{padding:20px 22px 22px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .cbody h2{font-size:24px;letter-spacing:-.02em}
+  .cbody p{color:var(--ink2);font-size:14.5px}
+  .cbody dl{font-size:13.5px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin-top:4px}
+  .cbody dt{font-family:var(--mono);font-size:11px;text-transform:uppercase;color:var(--mid);padding-top:2px}
+  .go{margin-top:auto;padding-top:10px;font-weight:650}
+  .scr{margin-top:56px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+  .scr ol{columns:2;padding-left:20px;font-size:14.5px;color:var(--ink2)}
+  @media (max-width:900px){.cards,.scr{grid-template-columns:minmax(0,1fr)}.scr ol{columns:1}}
+  @media (max-width:560px){.hm{padding:36px 16px 72px}}
+</style>
+</head>
+<body>
+<main class="hm">
+  <div class="pg-kicker">Papille · étape 1 · wireframes</div>
+  <h1>Trois façons<br>de ranger Papille</h1>
+  <p class="lead">Une app pour manger ce qu’on aime sans jamais risquer ce qu’on ne peut pas manger : profil et allergies, swipe des goûts, recettes vérifiées, découvertes, journal des apports et liste de courses. Chaque proposition montre les mêmes écrans, sur téléphone et sur ordinateur.</p>
+
+  <div class="cards">
+    <a class="cardx" href="wireframes/a.html">
+      <div class="prev"><iframe src="wireframes/a.html?ecran=journal" loading="lazy" tabindex="-1" title="Aperçu A"></iframe></div>
+      <div class="cbody"><span class="pg-kicker">Proposition A</span><h2>Tableau de bord</h2>
+        <p>Barre latérale, cartes douces, journal et courses aussi visibles que les recettes. Pour un usage quotidien.</p>
+        <dl><dt>Forces</dt><dd>Tout est à un clic, apports toujours en vue</dd><dt>Limites</dt><dd>Plus dense, moins « appétissant »</dd><dt>Réfs</dt><dd>Sprout, Cookly</dd></dl>
+        <span class="go acc">Voir les 10 écrans →</span></div>
+    </a>
+    <a class="cardx" href="wireframes/b.html">
+      <div class="prev"><iframe src="wireframes/b.html?ecran=recettes" loading="lazy" tabindex="-1" title="Aperçu B"></iframe></div>
+      <div class="cbody"><span class="pg-kicker">Proposition B</span><h2>Vitrine gourmande</h2>
+        <p>Grandes photos, titres posés sur l’image, catégories en vignettes rondes. Navigation en haut, comme un site de recettes.</p>
+        <dl><dt>Forces</dt><dd>Donne faim, prête pour un public</dd><dt>Limites</dt><dd>A besoin de bonnes photos partout</dd><dt>Réfs</dt><dd>Recipy, Cookary, Cookly</dd></dl>
+        <span class="go acc">Voir les 10 écrans →</span></div>
+    </a>
+    <a class="cardx" href="wireframes/c.html">
+      <div class="prev"><iframe src="wireframes/c.html?ecran=recettes" loading="lazy" tabindex="-1" title="Aperçu C"></iframe></div>
+      <div class="cbody"><span class="pg-kicker">Proposition C</span><h2>Carnet éditorial</h2>
+        <p>Une colonne, titres serif, métadonnées en mono, presque sans images. Premier lancement en étapes guidées.</p>
+        <dl><dt>Forces</dt><dd>Calme, rapide à construire, robuste sans photos</dd><dt>Limites</dt><dd>Moins de vue d’ensemble sur grand écran</dd><dt>Réfs</dt><dd>Bouchée, Sprout</dd></dl>
+        <span class="go acc">Voir les 11 écrans →</span></div>
+    </a>
+  </div>
+
+  <section class="scr">
+    <div class="pg-box"><h3>Écrans couverts</h3>
+      <ol><li>Connexion et inscription</li><li>Profil (allergènes, régimes, interdits, besoins)</li><li>Swipe des goûts</li><li>Mes goûts (4 listes, scores)</li><li>Recettes et filtres</li><li>Fiche recette</li><li>Recherche web et ajout</li><li>Découvrir</li><li>Journal et apports</li><li>Liste de courses</li></ol></div>
+    <div class="pg-box"><h3>Comment lire</h3>
+      <ul><li>Les pastilles bleues numérotées renvoient aux notes au-dessus de chaque écran.</li>
+        <li>Le rouge est réservé à la sécurité : recette impossible à vérifier, nutriment sous 70 %.</li>
+        <li>Les boutons « Téléphone / Ordinateur » en haut de chaque page filtrent les maquettes.</li>
+        <li>Les données affichées sont fictives (un profil type).</li></ul></div>
+  </section>
+</main>
+</body>
+</html>

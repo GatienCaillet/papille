@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Papille · Wireframe B</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  body[data-variant=b]{--acc:#4f9a2c;--acc-soft:#e6f2dc;--r:14px;--rs:12px}
+  .b-top{display:flex;align-items:center;gap:28px;padding:16px 48px;border-bottom:1px solid var(--line)}
+  .b-logo{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--acc)}
+  .b-links{display:flex;gap:26px;font-size:14px;color:var(--ink2)}
+  .b-links .on{color:var(--ink);font-weight:650;box-shadow:inset 0 -2px 0 var(--acc);padding-bottom:4px}
+  .b-pill{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:8px 16px;color:var(--mid);font-size:13px;width:240px}
+  .b-mtop{display:flex;align-items:center;gap:14px;padding:6px 18px 10px}
+  .b-mtabs{display:flex;gap:8px;padding:0 18px 12px;overflow:hidden;border-bottom:1px solid var(--line)}
+  .b-body{padding:32px 48px 48px;display:flex;flex-direction:column;gap:24px}
+  .is-m .b-body{padding:16px 18px 28px;gap:18px}
+  .b-hero{position:relative;color:#fff}
+  .b-hero .ph{border-radius:0}
+  .b-hero .t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:16px}
+  .b-hero .t h1{font-family:Georgia,"Times New Roman",serif;font-size:56px;font-weight:700;letter-spacing:-.02em;line-height:1}
+  .is-m .b-hero .t h1{font-size:34px}
+  .b-ov{position:relative;border-radius:var(--r);overflow:hidden;color:#fff}
+  .b-ov .ph{border-radius:0}
+  .b-ov .t{position:absolute;left:0;right:0;bottom:0;padding:14px;background:linear-gradient(transparent,rgba(0,0,0,.72));display:flex;flex-direction:column;gap:4px}
+  .b-ov .t .h3{font-family:Georgia,serif;font-size:17px}
+  .b-ov .tl{position:absolute;left:10px;top:10px;display:flex;gap:6px}
+  .b-ov .tr2{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+  .b-glass{background:rgba(255,255,255,.92);color:var(--ink)}
+  .b-cat{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12.5px;font-weight:600}
+  .b-cat .ph{border-radius:50%}
+  .b-serif{font-family:Georgia,"Times New Roman",serif;letter-spacing:-.01em}
+  .b-band{background:var(--acc);color:#fff;border-radius:var(--r)}
+  .b-anchor{display:flex;flex-direction:column;gap:2px;position:sticky;top:0}
+  .b-anchor span{padding:8px 12px;border-left:2px solid var(--line);color:var(--ink2);font-size:13.5px}
+  .b-anchor span.on{border-color:var(--acc);color:var(--ink);font-weight:650}
+  .b-sheet{border-radius:22px 22px 0 0;box-shadow:0 -10px 30px -12px rgba(0,0,0,.25);border:1px solid var(--line);border-bottom:0}
+</style>
+</head>
+<body data-variant="b" data-view="both">
+<script src="wf.js"></script>
+<script>
+const LINKS = [['recettes', 'Recettes'], ['decouvrir', 'Découvrir'], ['gouts', 'Mes goûts'], ['journal', 'Journal'], ['courses', 'Courses']];
+
+const V = {
+  key: 'b', letter: 'B', name: 'Vitrine gourmande',
+  desc: 'L’appétit d’abord : grandes photos, titres posés sur l’image, catégories en vignettes rondes. On navigue par une barre en haut (onglets défilants sur téléphone), comme sur un site de recettes, et chaque section ouvre sur un bandeau photo. Plus séduisant, plus proche d’un futur produit public, mais plus dépendant d’images de qualité.',
+  refs: ['Recipy (cooking-website-exemple2) : bandeau titre sur photo, filtres en pastilles, cartes à titre incrusté', 'Cookary (exemple1) : vignettes rondes par catégorie, bloc « recette du mois », responsive', 'Cookly (exemple5) : en-têtes verts pour ingrédients et valeurs nutritionnelles'],
+  moves: ['Bandeau photo + grand titre serif à chaque section', 'Cartes photo à titre incrusté, badges posés sur l’image', 'Vignettes rondes pour les catégories et les aliments', 'Bloc vedette « à découvrir » en deux moitiés'],
+  shell(html, m, tab) {
+    if (m === 'm') return `<div class="b-mtop"><span style="font-size:20px">☰</span><span class="b-logo">Papille</span><span class="ml">⌕</span><span>🛒</span><span class="av" style="width:28px;height:28px">GC</span></div>
+      <div class="b-mtabs">${LINKS.map(([k, l]) => `<span class="chip sm ${k === tab ? 'on' : ''}">${l}</span>`).join('')}</div>${html}`;
+    return `<header class="b-top"><span class="b-logo">Papille</span><nav class="b-links">${LINKS.map(([k, l]) => `<span class="${k === tab ? 'on' : ''}">${l}</span>`).join('')}</nav>
+      <span class="b-pill ml">⌕ Rechercher…</span><span class="row g4 sm">🛒 <b>14</b></span><span class="av" style="${tab === 'profil' ? 'box-shadow:0 0 0 2px var(--acc)' : ''}">GC</span></header>${html}`;
+  },
+};
+
+const hero = (m, title, sub = '', h = 220) => `<div class="b-hero">${H.img(m === 'd' ? `1280/${h}` : `390/${Math.round(h * .75)}`, '', 'dark')}<div class="t"><h1>${title}</h1>${sub ? `<span class="sm" style="opacity:.85">${sub}</span>` : ''}</div></div>`;
+const body = inner => `<div class="b-body">${inner}</div>`;
+const ov = (r, extra = '', ratio = '4/5') => `<div class="b-ov">${H.img(ratio, '', 'dark')}<div class="tl"><span class="bdg b-glass">${r.ty || 'Plat'}</span></div>${extra}<div class="t"><span class="h3">${r.n}</span><span class="xs" style="opacity:.85">${r.t} min · ${r.k} kcal${r.s ? ` · <b>${r.s} % pour vous</b>` : ''}</span></div></div>`;
+
+const screens = [
+/* 01 */
+{ id: 'connexion', title: 'Connexion et inscription', tab: null,
+  notes: ['Supabase Auth : e-mail + mot de passe.', 'Inscription : même carte, un champ de confirmation en plus, puis le Profil.', 'Déconnexion depuis le menu du profil (avatar).'],
+  html: m => {
+    const form = `<div class="col g12"><span class="b-serif" style="font-size:30px;font-weight:700">Bienvenue</span>${H.seg(['Connexion', 'Inscription'])}
+      <div><span class="lbl">E-mail</span>${H.field('vous@exemple.fr')}</div><div><span class="lbl">Mot de passe</span>${H.field('••••••••')}</div>
+      <span class="btn pri blk lg">Se connecter ${H.mk(1)}</span><span class="sm mut tc">Nouveau ? <b class="acc">Créer un compte</b> ${H.mk(2)}</span></div>`;
+    if (m === 'm') return `<div class="b-hero">${H.img('390/330', '', 'dark')}<div class="t"><span class="b-logo" style="color:#fff;font-size:30px">Papille</span><span class="sm">Ce qui vous plaît, sans risque.</span></div></div><div class="b-sheet p20" style="margin-top:-24px;background:#fff;position:relative;flex:1">${form}</div>`;
+    return `<div style="position:relative;min-height:840px">${H.img('1280/840', '', 'dark')}<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 120px">
+      <div style="color:#fff;max-width:440px" class="col g12"><span class="b-logo" style="color:#fff;font-size:40px">Papille</span><span class="b-serif" style="font-size:40px;line-height:1.1">Mangez ce que vous aimez, sans jamais risquer le reste.</span></div>
+      <div class="card p24" style="width:400px">${form}</div></div></div>`;
+  } },
+
+/* 02 */
+{ id: 'profil', title: 'Profil', tab: 'profil',
+  notes: ['Sommaire collant sur ordinateur : une longue page, un clic par section.', '14 allergènes UE et 7 régimes en pastilles.', 'Interdits en texte libre, suggestions CIQUAL.', 'Le besoin calorique est mis en vedette dans un bandeau ; détail Mifflin-St Jeor dessous.', 'Références par nutriment en grille.'],
+  html: m => {
+    const sec = (t, n, inner) => `<div class="col g12"><span class="b-serif" style="font-size:24px;font-weight:700">${t} ${n ? H.mk(n) : ''}</span>${inner}</div>`;
+    const forms = `${sec('Allergies', 2, `<div class="row wrap g6">${H.chips(D.allergens, D.allergensOn)}</div>`)}<div class="hr"></div>
+      ${sec('Régimes', 0, `<div class="row wrap g6">${H.chips(D.regimes, D.regimesOn)}</div>`)}<div class="hr"></div>
+      ${sec('Aliments interdits', 3, `${H.field('＋ Ajouter un aliment')}<div class="row g6">${D.forbidden.map(f => `<span class="chip">${f} <span class="x">×</span></span>`).join('')}</div>`)}<div class="hr"></div>
+      ${sec('Mon corps', 0, `<div class="grid ${m === 'd' ? 'dc4' : 'c2'}" style="gap:10px"><div><span class="lbl">Âge</span>${H.field('<b>29</b> ans')}</div><div><span class="lbl">Sexe</span>${H.seg(['F', 'H'])}</div><div><span class="lbl">Poids</span>${H.field('<b>62</b> kg')}</div><div><span class="lbl">Taille</span>${H.field('<b>168</b> cm')}</div></div><div><span class="lbl">Activité</span>${H.field('<b>' + D.body.act + '</b><span class="ml">▾</span>')}</div>
+        <div class="b-band p20 row between wrap g12"><div class="col g4"><span class="eyb" style="color:#fff;opacity:.8">Votre besoin ${H.mk(4)}</span><span class="b-serif" style="font-size:44px;font-weight:700;line-height:1">2 114 kcal</span><span class="xs" style="opacity:.85">1 364 kcal au repos × 1,55 · Mifflin-St Jeor</span></div></div>`)}<div class="hr"></div>
+      ${sec('Mes références', 5, `<div class="grid ${m === 'd' ? 'dc4' : 'c2'}" style="gap:8px">${D.refs.map(r => `<div class="card soft p12 col" style="gap:0"><span class="xs mut">${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>`)}
+      <span class="btn" style="align-self:flex-start">Se déconnecter</span>`;
+    return hero(m, 'Mon profil', 'Ce que vous ne mangez jamais', 160) + body(m === 'd'
+      ? `<div class="grid" style="grid-template-columns:200px 1fr;gap:48px;align-items:start"><div class="b-anchor">${['Allergies', 'Régimes', 'Interdits', 'Mon corps', 'Références', 'Compte'].map((s, i) => `<span class="${i ? '' : 'on'}">${s}</span>`).join('')} <span>${H.mk(1)}</span></div><div class="col g20">${forms}</div></div>`
+      : `<div class="col g16">${forms}</div>`);
+  } },
+
+/* 03 */
+{ id: 'swipe', title: 'Swipe des goûts', tab: 'gouts',
+  notes: ['Carte plein cadre : la photo fait réagir plus vite que le nom.', 'Glisser à droite J’aime, à gauche Je n’aime pas, en haut ou en bas Je ne sais pas ; ou les boutons.', 'Uniquement des cartes compatibles avec le profil.', 'Progression 200 aliments de base, puis tout CIQUAL.'],
+  html: m => {
+    const card = `<div class="stack" style="width:${m === 'd' ? 420 : 320}px;margin:0 auto"><div class="swipe-ghost"></div>
+      <div class="b-ov" style="box-shadow:0 20px 40px -18px rgba(0,0,0,.5)">${H.img('3/4', '', 'dark')}<div class="tl"><span class="bdg b-glass">Plat</span></div><div class="tr2"><span class="bdg b-glass">48 / 200 ${H.mk(4)}</span></div>
+      <div class="t" style="padding:20px"><span class="b-serif" style="font-size:28px;font-weight:700">Ratatouille</span><span class="sm" style="opacity:.85">aubergine, courgette, poivron, tomate</span></div></div></div>`;
+    const btns = `<div class="row center g12"><span class="btn lg" style="min-width:${m === 'd' ? 150 : 0}px">✕ ${m === 'd' ? 'Je n’aime pas' : ''}</span><span class="btn lg soft">? ${m === 'd' ? 'Je ne sais pas' : ''}</span><span class="btn lg pri" style="min-width:${m === 'd' ? 150 : 0}px">♥ J’aime</span> ${H.mk(2)}</div>`;
+    const side = (t, a) => `<div class="col g4" style="align-items:center;color:var(--mid)"><span style="font-size:34px">${a}</span><span class="sm b">${t}</span></div>`;
+    const stage = m === 'd' ? `<div class="row center g32">${side('Je n’aime pas', '←')}<div class="col g12" style="align-items:center">${side('Je ne sais pas', '↑')}${card}${side('Je ne sais pas', '↓')}</div>${side('J’aime', '→')}</div>` : card + `<p class="xs mut tc">← jamais · ↑↓ je ne sais pas · j’aime →</p>`;
+    return body(`<div class="row between"><span class="b-serif" style="font-size:${m === 'd' ? 34 : 26}px;font-weight:700">Vous aimez ?</span><span class="row g6 sm">Tout CIQUAL ${H.tg(false)}</span></div>
+      <div class="row g4">${[1, 1, 0, 0, 0].map(x => `<span class="fx" style="height:4px;border-radius:2px;background:${x ? 'var(--ink)' : 'var(--fill2)'}"></span>`).join('')}</div>
+      <span class="xs mut">${H.mk(3)} Seuls les plats compatibles avec votre profil sont proposés.</span>${stage}${btns}`);
+  } },
+
+/* 04 */
+{ id: 'mes-gouts', title: 'Mes goûts', tab: 'gouts',
+  notes: ['Quatre onglets : J’aime, Je n’aime pas, Je ne sais pas, Inconnu.', 'Chaque aliment en vignette ronde avec son score ; toucher → déplacer vers une autre liste.', 'Recherche pour classer directement un aliment.', 'Le score : réponse directe + plats aimés + effet de groupe, détaillé dans la fiche aliment.'],
+  html: m => {
+    const tile = f => `<div class="b-cat">${H.img('1/1')}<span>${f[0]}</span>${B.score(f[2])}</div>`;
+    const detail = `<div class="card p16 col g8"><div class="row g12"><div style="width:56px" class="none">${H.img('1/1', '', '')}</div><div class="col g4"><span class="h3">Carotte</span><span class="xs mut">Légumes racines</span></div><span class="ml">${B.score(82)}</span></div>
+      <div class="col g4 sm">${[['Vous l’aimez', '+50'], ['3 plats aimés en contiennent', '+24'], ['Groupe « légumes racines »', '+8']].map(x => `<div class="row between"><span class="ink2">${x[0]}</span><b class="green">${x[1]}</b></div>`).join('')}</div>
+      <div class="row g6"><span class="btn sm">Déplacer vers…</span><span class="btn sm soft">Retirer</span> ${H.mk(4)}</div></div>`;
+    return hero(m, 'Mes goûts', '7 aimés · 4 pas aimés · 3 incertains', 140) + body(`
+      <div class="row between wrap g12"><div class="row g20" style="border-bottom:1px solid var(--line)">${['J’aime 7', 'Je n’aime pas 4', 'Je ne sais pas 3', 'Inconnu 2 841'].map((t, i) => `<span class="sm" style="padding:8px 0;${i ? 'color:var(--mid)' : 'font-weight:650;box-shadow:inset 0 -2px 0 var(--acc)'}">${t}</span>`).join('')}</div>${H.mk(1)}
+      <div style="width:${m === 'd' ? 300 : 100}${m === 'd' ? 'px' : '%'}">${H.field('⌕ Classer un aliment…')}</div></div>
+      ${m === 'd' ? `<div class="grid" style="grid-template-columns:1fr 320px;gap:32px;align-items:start"><div class="grid" style="grid-template-columns:repeat(6,1fr)">${D.likes.concat(D.unknown.slice(0, 1)).map(tile).join('')}</div>${detail}</div>`
+        : `<div class="grid" style="grid-template-columns:repeat(3,1fr)">${D.likes.slice(0, 6).map(tile).join('')}</div>${detail}`}
+      <span class="xs mut">${H.mk(2)} toucher une vignette ouvre sa fiche · ${H.mk(3)} la recherche couvre tout CIQUAL</span>`);
+  } },
+
+/* 05 */
+{ id: 'recettes', title: 'Recettes', tab: 'recettes',
+  notes: ['Types de plat en vignettes rondes (filtre rapide).', 'Filtres : texte, temps, origine, « que des aliments que j’aime » ; tri selon vos goûts.', 'Seules les recettes compatibles et sans « je n’aime pas » sont listées.', 'Recettes non vérifiables masquées ; affichées sur demande avec cadre et bandeau rouges.'],
+  html: m => {
+    const cats = ['Entrée', 'Plat', 'Dessert', 'Soupe', 'Salade', 'Goûter'];
+    const unv = `<div class="b-ov" style="outline:3px solid var(--red);outline-offset:-3px">${H.img('4/5', '', 'dark')}<div class="tl"><span class="bdg red">⚠ Impossible à vérifier ${H.mk(4)}</span></div><div class="t" style="background:linear-gradient(transparent,rgba(120,10,10,.85))"><span class="h3">${D.unverifiable.n}</span><span class="xs">${D.unverifiable.why}</span></div></div>`;
+    const n = m === 'd' ? 7 : 3;
+    return hero(m, 'Recettes', '312 compatibles avec votre profil', 200) + body(`
+      <div class="row ${m === 'd' ? 'center g32' : 'g16 hscroll'}">${cats.map((c, i) => `<div class="b-cat" style="width:${m === 'd' ? 88 : 64}px">${H.img('1/1')}<span style="${i === 1 ? 'color:var(--acc)' : ''}">${c}</span></div>`).join('')}${H.mk(1)}</div>
+      <div class="row between wrap g8"><div class="row wrap g6"><span class="chip">⏱ Moins de 30 min</span><span class="chip">Origine ▾</span><span class="chip on">♥ Que des aliments aimés</span>${m === 'd' ? '<span class="chip">⌕ Ingrédient, nom…</span>' : ''} ${H.mk(2)}</div>
+        <div class="row g6"><span class="chip">Selon vos goûts ▾</span><span class="chip">☰ Plus de filtres</span></div></div>
+      <div class="row between sm"><span class="mut">${H.mk(3)} 0 aliment « je n’aime pas » dans cette liste</span><span class="row g6">Afficher les non vérifiables (6) ${H.tg(true)}</span></div>
+      <div class="grid ${m === 'd' ? 'dc4' : 'c2'}" style="gap:${m === 'd' ? 20 : 10}px">${D.recipes.slice(0, n).map(r => ov(r)).join('')}${unv}</div>
+      <div class="row center"><span class="btn pri">Voir plus de recettes →</span></div>`) + (m === 'm' ? `<span class="fab">＋</span>` : '');
+  } },
+
+/* 06 */
+{ id: 'fiche-recette', title: 'Fiche recette', tab: 'recettes',
+  notes: ['Photo plein cadre avec titre et avis J’aime / J’aime pas.', 'Portions ± : ingrédients et valeurs recalculés.', 'Ingrédients repérés : aimé, inconnu, composé vérifié.', 'Bandeau sécurité : vérifié contre allergies, régimes, interdits, y compris les ingrédients cachés.', 'Actions : journal (portions) et courses (ajustées).'],
+  html: m => {
+    const head = `<div class="b-hero">${H.img(m === 'd' ? '1280/380' : '390/300', '', 'dark')}<div class="t" style="justify-content:flex-end;align-items:flex-start;text-align:left;padding:${m === 'd' ? '40px 48px' : '18px'};background:linear-gradient(transparent 40%,rgba(0,0,0,.6))">
+      <span class="bdg b-glass">Plat · Indienne</span><h1 style="font-size:${m === 'd' ? 50 : 30}px">Curry de lentilles corail</h1><span class="sm" style="opacity:.85">marmiton.org ↗ · 30 min · 520 kcal / portion · 94 % pour vous</span>
+      <div class="row g8 mt8"><span class="btn sm b-glass">♥ J’aime</span><span class="btn sm b-glass">✕ J’aime pas</span> ${H.mk(1)}</div></div></div>`;
+    const safe = `<div class="ok p16 row top g12"><span class="b green" style="font-size:20px">✓</span><div class="col g4"><b class="green">Compatible avec votre profil ${H.mk(4)}</b><span class="sm ink2">Pâte de curry et bouillon décomposés et vérifiés. Rien de : fruits à coque, sésame, porc, coriandre, kiwi.</span></div></div>`;
+    const bar = (t, r) => `<div class="card accs p12 row between"><b class="acc">${t}</b><span class="xs mut">${r}</span></div>`;
+    const ing = `<div class="col g8">${bar('Ingrédients (4 portions)', H.mk(3))}<div class="list">${D.ingredients.map(i => `<div class="row between" style="padding:8px 2px"><span class="row g6">${i[0]} ${B.ingMark(i[2])}</span><span class="sm mut">${i[1]}</span></div>`).join('')}</div></div>`;
+    const nut = `<div class="col g8">${bar('Valeurs par portion', '% besoin')}<div class="list">${D.nutriRecipe.map(n => `<div class="row between" style="padding:8px 2px"><span>• ${n[0]}</span><span class="row g12"><b class="acc sm">${n[1]}</b><span class="sm mut">${n[2]} %</span></span></div>`).join('')}</div></div>`;
+    const stepper = `<div class="card p16 row between"><div class="col" style="gap:0"><span class="h3">Portions ${H.mk(2)}</span><span class="xs mut">Tout se recalcule</span></div><span class="row g8"><span class="btn ic-only">−</span><b>4</b><span class="btn ic-only">＋</span></span></div>`;
+    const act = `<div class="row g8"><span class="btn pri fx">＋ Au journal</span><span class="btn fx">🛒 Aux courses</span> ${H.mk(5)}</div>`;
+    const steps = `<div class="col g12"><span class="b-serif" style="font-size:24px;font-weight:700">Étapes</span>${[1, 2, 3].map(n => `<div class="card p16 row top g12"><span class="av" style="background:var(--acc-soft);color:var(--acc)">${n}</span><div class="fx">${H.lines([100, 64])}</div></div>`).join('')}</div>`;
+    return head + body(m === 'd' ? `${safe}<div class="grid" style="grid-template-columns:1fr 1fr 300px;gap:32px;align-items:start">${ing}${nut}<div class="col g12">${stepper}${act}</div></div>${steps}` : `${safe}${stepper}${act}${ing}${nut}${steps}`);
+  } },
+
+/* 07 */
+{ id: 'ajout-recette', title: 'Recherche web et ajout de recette', tab: 'recettes',
+  notes: ['Grande barre de recherche ; les contraintes du profil s’ajoutent en pastilles retirables.', 'Sources sélectionnables.', 'Résultats en cartes photo ; badges : inconnus, « je n’aime pas », non vérifiable.', 'Non vérifiable : cadre rouge, la raison est écrite.', 'Résultats exclus par le profil comptés à part.'],
+  html: m => {
+    const card = w => `<div class="col g8 ${w.st === 'unv' ? 'warn' : ''}" style="${w.st === 'unv' ? 'border-radius:var(--r);padding:6px' : ''}"><div class="b-ov">${H.img('4/3', '', 'dark')}<div class="tl"><span class="bdg b-glass">${w.src}</span></div><div class="t"><span class="h3">${w.n}</span></div></div>
+      <div class="row wrap g4">${B.webBadges(w)}</div>${w.st === 'unv' ? `<span class="xs red">${w.info} ${H.mk(4)}</span>` : ''}<span class="btn sm ${w.st === 'unv' ? '' : 'pri'}" style="align-self:flex-start">Importer</span></div>`;
+    return `<div class="b-hero">${H.img(m === 'd' ? '1280/260' : '390/250', '', 'dark')}<div class="t" style="gap:12px"><h1 style="font-size:${m === 'd' ? 44 : 28}px">Trouver une recette</h1>
+      <div class="row g8" style="width:${m === 'd' ? 620 : 330}px;background:#fff;border-radius:999px;padding:6px 6px 6px 18px;color:var(--ink)"><span class="fx" style="text-align:left">⌕ lasagnes</span><span class="btn pri sm">Chercher</span></div>
+      <div class="row wrap center g6" style="max-width:620px">${D.webQuery.map(q => `<span class="chip sm" style="background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.4)">${q} ×</span>`).join('')} ${H.mk(1)}</div></div></div>` +
+      body(`<div class="row wrap g6"><span class="sm b">Sources ${H.mk(2)}</span>${H.chips(D.sources, D.sources.slice(0, 3), 'sm')}<span class="${m === 'd' ? 'ml' : ''} sm mut">ou <u>coller un lien</u> · <u>saisir à la main</u></span></div>
+      <div class="grid ${m === 'd' ? 'dc4' : 'c2'}" style="gap:16px">${D.web.map(card).join('')}</div><span class="xs mut">${H.mk(3)} badges sous chaque carte · ${H.mk(5)} 3 résultats exclus (porc, noix de cajou) · <u>voir</u></span>`);
+  } },
+
+/* 08 */
+{ id: 'decouvrir', title: 'Découvrir', tab: 'decouvrir',
+  notes: ['Bloc vedette : un aliment inconnu proche de vos goûts, avec la raison.', 'Réponse directe sur l’aliment (J’aime / J’aime pas / Pas encore goûté).', 'Autres aliments à découvrir en vignettes rondes.', 'Recettes pour goûter, avec ♥ / ✕ posés sur la photo.'],
+  html: m => {
+    const feat = `<div class="card soft ${m === 'd' ? 'grid c2' : 'col'}" style="overflow:hidden;gap:0"><div class="p24 col g12" style="justify-content:center"><span class="eyb">À découvrir ${H.mk(1)}</span><span class="b-serif" style="font-size:${m === 'd' ? 44 : 30}px;font-weight:700;line-height:1.05">Le panais</span>
+      <span class="ink2">Vous aimez la carotte et le navet : il en a la douceur, avec une note de noisette.</span><div class="row wrap g6"><span class="btn pri">♥ J’aime</span><span class="btn">✕ J’aime pas</span><span class="btn soft">Pas encore goûté</span> ${H.mk(2)}</div></div>${H.img(m === 'd' ? '4/3' : '16/10', '', 'dark')}</div>`;
+    const others = `<div class="col g12"><span class="b-serif" style="font-size:22px;font-weight:700">Aussi proches de vos goûts ${H.mk(3)}</span><div class="row ${m === 'd' ? 'g32' : 'g16'}">${D.discover.slice(1).concat([{ n: 'Topinambour', s: 30 }, { n: 'Quinoa', s: 25 }]).slice(0, m === 'd' ? 4 : 3).map(f => `<div class="b-cat" style="width:${m === 'd' ? 110 : 84}px">${H.img('1/1')}<span>${f.n}</span>${B.score(f.s)}</div>`).join('')}</div></div>`;
+    const recs = `<div class="col g12"><span class="b-serif" style="font-size:22px;font-weight:700">Goûter le panais ${H.mk(4)}</span><div class="grid ${m === 'd' ? 'dc3' : 'c2'}">${D.discoverRecipes.slice(0, m === 'd' ? 3 : 2).map(r => ov(r, `<div class="tr2"><span class="btn ic-only b-glass" style="width:32px;height:32px">♥</span><span class="btn ic-only b-glass" style="width:32px;height:32px">✕</span></div>`, '4/3')).join('')}</div></div>`;
+    return body(feat + others + recs);
+  } },
+
+/* 09 */
+{ id: 'journal', title: 'Journal et apports', tab: 'journal',
+  notes: ['Bandeau du jour : calories et macronutriments en un coup d’œil ; flèches pour changer de jour.', 'Ajout en feuille glissante : aliment en grammes ou recette en portions.', 'Tableau : aujourd’hui ET moyenne 7 jours côte à côte, pastille de couleur par nutriment.', 'À surveiller : nutriments sous 70 %, aliments en vignettes et recettes compatibles.'],
+  html: m => {
+    const band = `<div class="b-band p20 col g12"><div class="row between"><span class="btn sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:transparent">‹</span><b>Dimanche 15 novembre ${H.mk(1)}</b><span class="btn sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:transparent">›</span></div>
+      <div class="row ${m === 'd' ? 'g32' : 'between'} wrap g16"><div class="col" style="gap:0"><span class="b-serif" style="font-size:${m === 'd' ? 52 : 38}px;font-weight:700;line-height:1">1 640</span><span class="xs" style="opacity:.8">sur 2 114 kcal</span></div>
+      ${[['Prot.', 90], ['Gluc.', 77], ['Lip.', 83]].map(x => `<div class="col g4" style="align-items:center"><span style="width:${m === 'd' ? 64 : 48}px;height:${m === 'd' ? 64 : 48}px;border-radius:50%;border:6px solid rgba(255,255,255,.3);border-top-color:#fff;border-right-color:#fff"></span><span class="xs">${x[0]} ${x[1]} %</span></div>`).join('')}</div></div>`;
+    const rows = D.nutri.slice(1).map(r => [B.nutriRow(r, 2), B.nutriRow(r, 3)]);
+    const table = `<div class="card p16 col g8"><div class="row between"><span class="b-serif" style="font-size:22px;font-weight:700">Apports ${H.mk(3)}</span>${m === 'm' ? H.seg(['Jour', '7 j']) : ''}</div>
+      <table class="tbl"><tr><th>Nutriment</th><th>Aujourd’hui</th>${m === 'd' ? '<th>Moyenne 7 j</th>' : ''}<th class="tr">Besoin</th></tr>${rows.map(([d, w]) => `<tr><td>${d.name}</td><td><span class="row g6"><i class="dot ${d.c}"></i>${d.val} <span class="mut xs">${d.p} %</span></span></td>${m === 'd' ? `<td><span class="row g6"><i class="dot ${w.c}"></i>${w.val} <span class="mut xs">${w.p} %</span></span></td>` : ''}<td class="tr mut">${d.ref}</td></tr>`).join('')}</table>${B.legend()}</div>`;
+    const entries = `<div class="col g8"><div class="row between"><span class="b-serif" style="font-size:22px;font-weight:700">Mangé aujourd’hui</span><span class="btn pri sm d-only">＋ Ajouter</span></div><div class="card list">${D.journal.map(e => `<div class="row g12 p12"><div style="width:40px" class="none">${H.img('1/1')}</div><span class="fx col" style="gap:0">${e[0]}<span class="xs mut">${e[1]}</span></span><span class="sm">${e[2]} kcal</span></div>`).join('')}</div></div>`;
+    const watch = `<div class="card p16 col g12" style="border:1.5px solid var(--red)"><span class="b-serif" style="font-size:22px;font-weight:700">À surveiller ${H.mk(4)}</span><div class="${m === 'd' ? 'grid dc3' : 'col g12'}">${D.watch.map(w => `<div class="col g8"><div class="row g8"><span class="bdg red">${w.p} %</span><b>${w.n}</b></div><div class="row g8">${w.foods.split(', ').map(f => `<div class="b-cat" style="width:64px">${H.img('1/1')}<span class="xs">${f}</span></div>`).join('')}</div><span class="sm acc b">${w.recipes} →</span></div>`).join(m === 'd' ? '' : '<div class="hr"></div>')}</div></div>`;
+    const sheet = `<div class="b-sheet p16 col g12" style="background:#fff"><span style="width:40px;height:4px;border-radius:2px;background:var(--line);align-self:center"></span><div class="row between"><b>Ajouter ${H.mk(2)}</b>${H.seg(['Aliment', 'Recette'], 1)}</div><div class="row g8"><div class="fx">${H.field('⌕ <b>Curry de lentilles</b>')}</div><div style="width:110px">${H.field('<b>1,5</b> portion')}</div></div><span class="btn pri blk">Ajouter au 15 nov.</span></div>`;
+    if (m === 'm') return body(band + entries + table + watch) + sheet;
+    return body(band + `<div class="grid" style="grid-template-columns:1fr 1.25fr;gap:28px;align-items:start"><div class="col g20">${entries}<div class="card p16 col g12"><div class="row between"><b>Ajouter ${H.mk(2)}</b>${H.seg(['Aliment', 'Recette'])}</div><div class="row g8"><div class="fx">${H.field('⌕ Rechercher')}</div><div style="width:110px">${H.field('<b>150</b> g')}</div><span class="btn pri">＋</span></div></div></div>${table}</div>` + watch);
+  } },
+
+/* 10 */
+{ id: 'courses', title: 'Liste de courses', tab: 'courses',
+  notes: ['Recettes ajoutées en tête, portions modifiables : la liste se recalcule et fusionne les doublons.', 'Liste de base « toujours acheter » en un geste.', 'Rayons en cartes, cases à cocher, articles manuels.', 'Vider les cochés.'],
+  html: m => {
+    const recs = `<div class="col g8"><span class="b-serif" style="font-size:22px;font-weight:700">Depuis vos recettes ${H.mk(1)}</span><div class="row g12 ${m === 'm' ? 'hscroll' : ''}">${[['Curry de lentilles corail', 4], ['Chili sin carne', 2]].map(r => `<div class="card row g12 p8" style="width:${m === 'd' ? 340 : 280}px"><div style="width:64px" class="none">${H.img('1/1', '', 'dark')}</div><div class="col g4 fx"><span class="h3">${r[0]}</span><span class="row g6 sm"><span class="btn sm ic-only" style="width:26px;height:26px">−</span><b>${r[1]}</b><span class="btn sm ic-only" style="width:26px;height:26px">＋</span> portions</span></div></div>`).join('')}</div></div>`;
+    const tools = `<div class="row wrap g8"><div style="flex:1 1 220px">${H.field('＋ Ajouter un article…')}</div><span class="btn pri">＋ Toujours acheter (6) ${H.mk(2)}</span><span class="btn">Vider les cochés (3) ${H.mk(4)}</span></div>`;
+    const groups = `<div class="grid ${m === 'd' ? 'dc2' : ''}" style="gap:16px;align-items:start">${D.shopping.map(([g, items], gi) => `<div class="card p16 col g8"><div class="row g8"><div style="width:30px" class="none">${H.img('1/1', '', '')}</div><b>${g}</b>${gi === 0 ? H.mk(3) : ''}<span class="ml xs mut">${items.length}</span></div>
+      <div class="list">${items.map(it => `<div class="row g12" style="padding:8px 0">${H.cb(it[3])}<span class="fx ${it[3] ? 'strike' : ''}">${it[0]}${it[2] === '2 recettes' ? ' <span class="bdg acc">fusionné</span>' : ''}</span><span class="sm mut">${it[1]}</span></div>`).join('')}</div></div>`).join('')}</div>`;
+    return hero(m, 'Mes courses', '3 sur 15 dans le panier', 140) + body(recs + tools + groups);
+  } },
+];
+
+WF.render(V, screens);
+</script>
+</body>
+</html>
