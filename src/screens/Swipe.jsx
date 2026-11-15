@@ -66,7 +66,13 @@ export default function Swipe() {
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* ignoré */ }
     setDrag(d => ({ ...d, active: true }));
   };
-  const onMove = e => { if (!start.current) return; setDrag(d => ({ ...d, x: e.clientX - start.current.x, y: e.clientY - start.current.y })); };
+  const onMove = e => {
+    const s = start.current;
+    if (!s) return;
+    // Calculé tout de suite : la mise à jour d'état peut passer après le relâchement (start.current déjà vidé)
+    const x = e.clientX - s.x, y = e.clientY - s.y;
+    setDrag(d => ({ ...d, x, y }));
+  };
   const onUp = () => {
     if (!start.current) return;
     start.current = null;
