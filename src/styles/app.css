@@ -50,7 +50,10 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-text-size-adjust: 100%; }
+/* overscroll-behavior-x : un glissé horizontal ne doit pas déclencher « page précédente »
+   (pavé tactile, bord d'écran) ; overflow-x: clip : rien ne peut élargir la page. */
+html { -webkit-text-size-adjust: 100%; overscroll-behavior-x: none; overflow-x: clip; }
+body { overscroll-behavior-x: none; overflow-x: clip; }
 body {
   background: var(--ground);
   color: var(--ink);
@@ -205,6 +208,11 @@ input { caret-color: var(--brand); }
 .input-wrap > svg { position: absolute; left: 13px; color: var(--muted); pointer-events: none; }
 .input-wrap .input { padding-left: 40px; }
 .input-wrap .suffix { position: absolute; right: 14px; font-size: 13px; color: var(--muted); pointer-events: none; }
+.input-wrap:has(.suffix) .input { padding-right: 56px; }
+/* Pas de flèches sur les champs nombre : elles passaient sous l'unité */
+.input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.input[type="number"]::-webkit-inner-spin-button,
+.input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 select.input { appearance: none; padding-right: 36px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2348554c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
 
 .badge { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border-radius: 8px; font-size: 12px; font-weight: 640; white-space: nowrap; background: var(--ground-2); color: var(--ink-2); }

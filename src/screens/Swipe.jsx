@@ -59,7 +59,13 @@ export default function Swipe() {
     return () => window.removeEventListener('keydown', onKey);
   }, [commit]);
 
-  const onDown = e => { if (drag.out) return; start.current = { x: e.clientX, y: e.clientY }; e.currentTarget.setPointerCapture(e.pointerId); setDrag(d => ({ ...d, active: true })); };
+  const onDown = e => {
+    if (drag.out || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    start.current = { x: e.clientX, y: e.clientY };
+    // Certains navigateurs refusent la capture (pointeur déjà relâché) : le glissé marche quand même
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* ignoré */ }
+    setDrag(d => ({ ...d, active: true }));
+  };
   const onMove = e => { if (!start.current) return; setDrag(d => ({ ...d, x: e.clientX - start.current.x, y: e.clientY - start.current.y })); };
   const onUp = () => {
     if (!start.current) return;
@@ -100,6 +106,7 @@ export default function Swipe() {
                 className={`swipe-card card ${drag.active ? 'is-drag' : ''} ${intent ? `intent-${intent}` : ''}`}
                 style={{ transform: `translate(${drag.x}px, ${drag.y}px) rotate(${drag.x / 18}deg)`, '--s': strength }}
                 onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+                onDragStart={e => e.preventDefault()}
               >
                 <SwipeCard item={card} />
                 {intent && <span className={`stamp stamp-${intent}`}>{LABEL[intent]}</span>}
