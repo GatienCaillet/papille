@@ -296,3 +296,11 @@
   .add-item select { flex: 1; min-width: 0; }
   .aisle { padding: 12px 14px 2px; }
 }
+.rd-img { position: relative; }
+.rd-img-note { position: absolute; left: 12px; bottom: 12px; }
+.credits-src ul { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--ink-2); }
+.credit-list { list-style: none; }
+.credit-list li { padding: 10px 16px; }
+.credit-list a { text-decoration: underline; text-underline-offset: 2px; }
+.credit-thumb { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; flex: none; background: var(--ground-2); }
+.credit-thumb img { width: 100%; height: 100%; object-fit: cover; }

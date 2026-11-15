@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useStore } from '../store.jsx';
 import { ACTIVITIES, ALLERGENS, bmr, catalog, fmt, needs, NUTRIENTS, outOfRange, profileComplete, RANGES, REGIMES } from '../lib/logic.js';
@@ -130,6 +130,7 @@ export default function Profile() {
               <button className="btn" type="button" onClick={async () => { await signOut(); nav('/connexion'); }}><LogOut size={16} /> {state.mode === 'cloud' ? 'Se déconnecter' : 'Quitter la démo'}</button>
               {state.mode === 'demo' && <button className="btn btn-ghost" type="button" onClick={() => { resetDemo(); notify('Démo remise à zéro.'); }}><RotateCcw size={16} /> Réinitialiser la démo</button>}
             </div>
+            <Link to="/credits" className="small link">Crédits des données et des photos</Link>
           </section>
         </div>
       </div>

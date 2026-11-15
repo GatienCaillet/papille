@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Apple, Bean, Candy, Carrot, Clock, Droplet, Drumstick, Fish, Flame, Leaf, Milk, Minus, Plus, Salad, Search, Soup, Sprout, TriangleAlert, Wheat, X } from 'lucide-react';
-import { FAMILLES, FOOD } from '../data/foods.js';
+import { FAMILLES, FOOD, IMAGES, imageOf, imageOfCiqual } from '../data/foods.js';
 
 const Icons = { Apple, Bean, Candy, Carrot, Droplet, Drumstick, Fish, Leaf, Milk, Salad, Soup, Sprout, Wheat };
 const TINT_ICON = { legume: 'Carrot', fruit: 'Apple', feculent: 'Wheat', legumineuse: 'Bean', viande: 'Drumstick', poisson: 'Fish', laitier: 'Milk', epice: 'Leaf', sauce: 'Soup', sucre: 'Candy', gras: 'Droplet' };
@@ -72,8 +72,23 @@ export function SearchInput({ value, onChange, placeholder, autoFocus, onKeyDown
   );
 }
 
-/** Vignette d'aliment : `food` du référentiel (famille), ou `tint` direct pour un aliment CIQUAL. */
-export function FoodTile({ food, tint, size = 44 }) {
+/** Agrandit une vignette Commons (480 px) : Special:FilePath plafonne à la taille d'origine. */
+export const commonsAt = (img, w) => {
+  const file = img?.page?.split('/File:')[1];
+  return file ? `https://commons.wikimedia.org/wiki/Special:FilePath/${file}?width=${w}` : img?.thumb;
+};
+
+/** Vignette d'aliment : photo (Wikipédia/Commons) si elle existe, sinon aplat teinté de la famille.
+ *  `food` : aliment du référentiel ; `code` + `tint` : aliment CIQUAL du journal. */
+export function FoodTile({ food, code, tint, size = 44 }) {
+  const img = food ? imageOf(food.id) : code ? imageOfCiqual(code) : null;
+  if (img) {
+    return (
+      <span className="ftile ftile-img" style={{ width: size, height: size }} aria-hidden="true">
+        <img src={size > 100 ? commonsAt(img, 640) : img.thumb} alt="" loading="lazy" decoding="async" draggable="false" />
+      </span>
+    );
+  }
   const t = tint || FAMILLES[food?.famille]?.tint || 'legume';
   const Icon = Icons[(food && FAMILLES[food.famille]?.icon) || TINT_ICON[t]] || Leaf;
   return (
@@ -92,13 +107,23 @@ export function Bar({ pct, tone }) {
   return <span className={`bar c-${tone}`} role="presentation"><i style={{ width: `${Math.min(100, pct)}%` }} /></span>;
 }
 
-/** Illustration d'une recette : sa photo (Wikimedia Commons) si elle en a une, sinon un aplat
- *  teinté de la famille de son ingrédient principal. */
-export function RecipeVisual({ r, full, eager }) {
-  if (r?.photo) {
-    const src = full ? r.photo.full : r.photo.full.replace(/width=\d+/, 'width=640');
-    return <img src={src} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" draggable="false" />;
+/** D'où vient l'illustration d'une recette : sa photo, l'article Wikipédia du plat, ou son ingrédient principal. */
+export function recipeImage(r) {
+  if (!r) return null;
+  if (r.photo) return { kind: 'own', src: r.photo.full, thumb: r.photo.full.replace(/width=\d+/, 'width=640') };
+  const dish = IMAGES.recipes[r.id];
+  if (dish) return { kind: 'dish', src: commonsAt(dish, 1024), thumb: commonsAt(dish, 640), credit: dish };
+  for (const id of r.main || []) {
+    const img = imageOf(id);
+    if (img) return { kind: 'ingredient', src: commonsAt(img, 1024), thumb: commonsAt(img, 640), credit: img, food: FOOD[img.of] };
   }
+  return null;
+}
+
+/** Illustration d'une recette ; sans aucune image, un aplat teinté de la famille de l'ingrédient principal. */
+export function RecipeVisual({ r, full, eager }) {
+  const img = recipeImage(r);
+  if (img) return <img src={full ? img.src : img.thumb} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" draggable="false" />;
   const f = FOOD[r?.main?.[0]];
   const t = FAMILLES[f?.famille]?.tint || 'sauce';
   const Icon = Icons[FAMILLES[f?.famille]?.icon] || Soup;

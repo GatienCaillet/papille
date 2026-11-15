@@ -57,7 +57,7 @@ function AddEntry({ day }) {
               {results.map(o => (
                 <li key={o.id}>
                   <button type="button" className="row pop-item" onClick={() => { setPick(o); setQty(kind === 'food' ? '100' : '1'); }}>
-                    {o.ciqual ? <FoodTile tint={ciqualTint(o.ciqual.groupe)} size={30} /> : <span className="pop-img"><RecipeVisual r={o.recipe} /></span>}
+                    {o.ciqual ? <FoodTile code={o.ciqual.code} tint={ciqualTint(o.ciqual.groupe)} size={30} /> : <span className="pop-img"><RecipeVisual r={o.recipe} /></span>}
                     <span className="stack" style={{ gap: 0 }}>
                       <span className="small">{o.name}</span>
                       {o.ciqual && <span className="xs muted">{o.ciqual.sousGroupe || o.ciqual.groupe} · {fmt(o.ciqual.n[0] ?? 0)} kcal / 100 g</span>}
@@ -163,7 +163,7 @@ export default function Journal() {
                   const name = isFood ? (f?.nom || `Aliment ${e.ref}`) : (r?.name || 'Recette supprimée');
                   return (
                     <li key={e.id} className="row" style={{ gap: 12 }}>
-                      {isFood ? <FoodTile tint={ciqualTint(f?.groupe)} size={40} /> : <span className="entry-img"><RecipeVisual r={r} /></span>}
+                      {isFood ? <FoodTile code={e.ref} tint={ciqualTint(f?.groupe)} size={40} /> : <span className="entry-img"><RecipeVisual r={r} /></span>}
                       <span className="stack grow" style={{ gap: 0 }}>
                         <span className="small b">{name}</span>
                         <span className="xs muted num">{isFood ? `${fmt(e.qty)} g` : `${fmt(e.qty)} portion${e.qty > 1 ? 's' : ''}`}</span>

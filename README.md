@@ -59,6 +59,6 @@ Chaque push sur `main` construit et publie le site (`.github/workflows/deploy.ym
 ## Sources et licences
 
 - Recettes : adaptations du *Livre de cuisine* de Wikibooks (CC BY-SA 3.0 ou 4.0 selon la révision) et recettes rédigées pour Bouchée (CC BY-SA 4.0), via le catalogue Bouchée. `public/data/recettes.json` reste sous CC BY-SA ; chaque fiche de l’app cite sa source, ses auteurs, sa licence et ses modifications.
-- Photos de recettes : Wikimedia Commons, auteur et licence indiqués sur chaque fiche.
+- Photos : Wikipédia et Wikimedia Commons (`public/data/images.json`, généré par `node scripts/build-images.mjs`) : 808 aliments et 248 plats ; auteur et licence sur chaque fiche et dans la page Crédits de l’app. Une recette sans photo est illustrée par son ingrédient principal, et la fiche le dit. Dessins et planches botaniques écartés ; homonymes corrigés à la main dans le script.
 - Nutriments : Table Ciqual 2025, Anses (Licence Ouverte 2.0).
 - Photo de l’écran de connexion : Unsplash (licence Unsplash).

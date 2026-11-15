@@ -44,6 +44,29 @@ export async function loadFoods() {
   childrenIndex = null;
 }
 
+/* ---------- Photos (Wikipédia / Commons), public/data/images.json ---------- */
+export let IMAGES = { foods: {}, recipes: {} };
+let byCiqual = null;
+export async function loadImages() {
+  try {
+    const res = await fetch(`${BASE}data/images.json`);
+    if (res.ok) IMAGES = await res.json();
+  } catch (e) { /* sans photos, l'app garde ses pictogrammes */ }
+}
+/** Photo d'un aliment, ou celle de son parent (« blanc de poulet » → poulet). */
+export function imageOf(id) {
+  for (let x = FOOD[id], depth = 0; x && depth < 4; x = FOOD[x.parent], depth++) {
+    if (IMAGES.foods[x.id]) return { ...IMAGES.foods[x.id], of: x.id };
+  }
+  return null;
+}
+/** Photo pour un aliment CIQUAL du journal, via l'ingrédient du référentiel qui porte ce code. */
+export function imageOfCiqual(code) {
+  if (!byCiqual) byCiqual = new Map(Object.values(FOOD).filter(f => f.ciqual).map(f => [String(f.ciqual), f.id]));
+  const id = byCiqual.get(String(code));
+  return id ? imageOf(id) : null;
+}
+
 export const cap = s => (s ? s[0].toUpperCase() + s.slice(1) : s);
 export const isBase = f => !!f.rang && f.rang <= BASE_COUNT;
 

@@ -5,7 +5,7 @@ import { useStore } from '../store.jsx';
 import { RECIPE } from '../data/recipes.js';
 import { FOOD } from '../data/foods.js';
 import { checkRecipe, dayKey, fmt, fmtQty, listFr, needs, NUTRIENTS, recipeMatch, today } from '../lib/logic.js';
-import { RecipeVisual, Stepper } from '../components/ui.jsx';
+import { RecipeVisual, recipeImage, Stepper } from '../components/ui.jsx';
 
 function Mark({ ing, answers }) {
   const foods = ing.foods || [];
@@ -37,6 +37,7 @@ export default function RecipeDetail() {
   const op = state.opinions[r.id];
   const k = portions / r.portions;
   const wiki = /wikibooks/.test(r.source.url || '');
+  const img = recipeImage(r);
 
   const setOp = v => {
     opinion(r.id, v);
@@ -83,7 +84,10 @@ export default function RecipeDetail() {
       <Link to="/recettes" className="back small"><ArrowLeft size={16} /> Recettes</Link>
 
       <div className="rd-top">
-        <div className="rd-img"><RecipeVisual r={r} full eager /></div>
+        <div className="rd-img">
+          <RecipeVisual r={r} full eager />
+          {img?.kind === 'ingredient' && <span className="badge badge-on-photo rd-img-note">Illustration : {img.food.nom.toLowerCase()}, ingrédient principal</span>}
+        </div>
         <div className="stack" style={{ gap: 16 }}>
           <div className="row row-wrap" style={{ gap: 6 }}>
             <span className="badge badge-brand">{r.type}</span>
@@ -182,6 +186,9 @@ export default function RecipeDetail() {
           {' '}· licence {r.source.licence}.
           {r.source.changes ? ` ${r.source.changes}` : ''}
         </p>
+        {img?.credit && (
+          <p><b>{img.kind === 'ingredient' ? 'Illustration' : 'Photo'} :</b> <a href={img.credit.page} target="_blank" rel="noreferrer">{img.credit.author}</a>, {img.credit.licence}, via Wikimedia Commons.</p>
+        )}
         {r.photo && (r.imported
           ? <p><b>Photo :</b> {r.photo.l}, affichée depuis la page d’origine.</p>
           : <p><b>Photo :</b> <a href={r.photo.page} target="_blank" rel="noreferrer">{r.photo.a}</a>, {r.photo.l}, via Wikimedia Commons.</p>)}

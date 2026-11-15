@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Heart, HelpCircle, Undo2, X } from 'lucide-react';
 import { useStore } from '../store.jsx';
-import { BASE_COUNT, FAMILLES, FOOD, FOODS, isBase } from '../data/foods.js';
+import { BASE_COUNT, FAMILLES, FOOD, FOODS, imageOf, isBase } from '../data/foods.js';
 import { RECIPE } from '../data/recipes.js';
 import { catalog, foodAllowed, listFr } from '../lib/logic.js';
-import { FoodTile, Img, PageHeader, Switch, RecipeVisual } from '../components/ui.jsx';
+import { commonsAt, FoodTile, Img, PageHeader, Switch, RecipeVisual } from '../components/ui.jsx';
 
 export function TasteTabs() {
   return (
@@ -178,9 +178,12 @@ function SwipeCard({ item, behind }) {
     );
   }
   const f = FOOD[item.ref];
+  const img = imageOf(f.id);
   return (
     <>
-      <div className="sc-media sc-food" style={{ background: `var(--g-${FAMILLES[f.famille]?.tint || 'legume'})` }}><FoodTile food={f} size={132} /></div>
+      {img
+        ? <div className="sc-media"><img src={commonsAt(img, 640)} alt={f.nom} loading="eager" decoding="async" draggable="false" /></div>
+        : <div className="sc-media sc-food" style={{ background: `var(--g-${FAMILLES[f.famille]?.tint || 'legume'})` }}><FoodTile food={f} size={132} /></div>}
       <div className="sc-body">
         <span className="row" style={{ gap: 6 }}><span className="badge">Aliment</span><span className="xs muted">{FAMILLES[f.famille]?.label}</span></span>
         <span className="sc-title">{f.nom}</span>

@@ -12,6 +12,7 @@ import AddRecipe from './screens/AddRecipe.jsx';
 import Discover from './screens/Discover.jsx';
 import Journal from './screens/Journal.jsx';
 import Shopping from './screens/Shopping.jsx';
+import Credits from './screens/Credits.jsx';
 
 function ScrollTop() {
   const { pathname } = useLocation();
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="/journal" element={<Journal />} />
             <Route path="/courses" element={<Shopping />} />
             <Route path="/profil" element={<Profile />} />
+            <Route path="/credits" element={<Credits />} />
           </Route>
           <Route path="*" element={<Navigate to="/recettes" replace />} />
         </Routes>
