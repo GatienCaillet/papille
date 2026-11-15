@@ -38,7 +38,6 @@ const UNITS = [
   [['poignee', 'poignees'], 'poignée', 30],
   [['bol', 'bols'], 'bol', 250],
   [['barquette', 'barquettes'], 'barquette', 250],
-  [['noix'], 'noix', 10],
 ];
 const UNIT_FORMS = UNITS.flatMap(([forms, label, g]) => forms.map(f => [f, label, g])).sort((a, b) => b[0].length - a[0].length);
 
@@ -104,15 +103,16 @@ export function parseIngredient(text) {
     if (qty === null) qty = 1;
   }
   const u = knob ? null : UNIT_FORMS.find(([form]) => s === form || s.startsWith(`${form} `) || s.startsWith(`${form}.`) || (form.length <= 2 && new RegExp(`^${form.replace(/\./g, '\\.')}(?=\\b|\\d)`).test(s)));
-  if (u && (qty !== null || !['noix', 'feuille', 'filet', 'zeste'].includes(u[1]))) {
+  if (u && (qty !== null || !['feuille', 'filet', 'zeste'].includes(u[1]))) {
     unit = u[1];
     gPerUnit = u[2];
     s = s.slice(u[0].length).replace(/^\.?\s*/, '');
   }
   s = s.replace(/^(de |d'|des |du )/, '').trim();
 
-  // Aliments reconnus : plus longs noms d'abord, mots entiers, sans chevauchement
-  const words = ` ${s.replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ')} `;
+  // Aliments reconnus : plus longs noms d'abord, mots entiers, sans chevauchement.
+  // « huile de noix de coco » n'est pas de l'huile de noix : « noix de coco » devient « coco » d'abord.
+  const words = ` ${s.replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').replace(/\bnoix de coco\b/g, 'coco')} `;
   let rest = words;
   const foods = [];
   for (const [k, id] of index) {
