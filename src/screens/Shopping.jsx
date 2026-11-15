@@ -7,7 +7,7 @@ import { AISLES, buildShopping, fmtQty } from '../lib/logic.js';
 import { Img, PageHeader, Stepper } from '../components/ui.jsx';
 
 export default function Shopping() {
-  const { state, toggleChecked, clearChecked, addManual, addAlways, setShoppingPortions, setAlways, notify } = useStore();
+  const { state, toggleChecked, clearChecked, addManual, addAlways, setShoppingPortions, addAlwaysItem, removeAlwaysItem, notify } = useStore();
   const groups = useMemo(() => buildShopping(state.shopping, RECIPE), [state.shopping]);
   const all = groups.flatMap(g => g.items);
   const done = all.filter(i => i.checked).length;
@@ -24,7 +24,7 @@ export default function Shopping() {
 
   const tools = (
     <div className="row row-wrap" style={{ gap: 8 }}>
-      <button type="button" className="btn btn-primary" onClick={() => { addAlways(); notify(`${state.always.length} articles de base ajoutés.`); }}><ListPlus size={17} /> Toujours acheter ({state.always.length})</button>
+      <button type="button" className="btn btn-primary" disabled={!state.always.length} onClick={() => { addAlways(); notify(`${state.always.length} articles de base ajoutés.`); }}><ListPlus size={17} /> Toujours acheter ({state.always.length})</button>
       <button type="button" className="btn" disabled={!done} onClick={() => { clearChecked(); notify(`${done} article${done > 1 ? 's' : ''} retiré${done > 1 ? 's' : ''}.`); }}><Trash2 size={16} /> Vider les cochés{done ? ` (${done})` : ''}</button>
     </div>
   );
@@ -96,12 +96,13 @@ export default function Shopping() {
             <p className="xs muted">Votre liste de base, ajoutée en un geste.</p>
             <div className="row row-wrap" style={{ gap: 6 }}>
               {state.always.map(a => (
-                <span key={a.name} className="chip chip-sm chip-static">{a.name}
-                  <button type="button" className="x" aria-label={`Retirer ${a.name}`} onClick={() => setAlways(state.always.filter(x => x.name !== a.name))}><X size={13} /></button>
+                <span key={a.id} className="chip chip-sm chip-static">{a.name}
+                  <button type="button" className="x" aria-label={`Retirer ${a.name}`} onClick={() => removeAlwaysItem(a.id)}><X size={13} /></button>
                 </span>
               ))}
+              {state.always.length === 0 && <span className="small muted">Aucun article pour l’instant.</span>}
             </div>
-            <form className="row" onSubmit={e => { e.preventDefault(); if (!newAlways.trim()) return; setAlways([...state.always, { name: newAlways.trim(), qty: 1, unit: '', aisle: 'Autres' }]); setNewAlways(''); }}>
+            <form className="row" onSubmit={e => { e.preventDefault(); const v = newAlways.trim(); if (!v) return; addAlwaysItem(v[0].toUpperCase() + v.slice(1)); setNewAlways(''); }}>
               <input className="input grow" style={{ height: 38 }} value={newAlways} onChange={e => setNewAlways(e.target.value)} placeholder="Ajouter à la base" aria-label="Ajouter à la liste de base" />
               <button className="btn btn-sm" type="submit" disabled={!newAlways.trim()}>Ajouter</button>
             </form>

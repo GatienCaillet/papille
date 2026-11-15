@@ -35,7 +35,10 @@ export function useWatch() {
   return useMemo(() => {
     const ref = needs(state.profile);
     const t = today();
-    const days = Array.from({ length: 7 }, (_, i) => sumVectors((state.journal[dayKey(addDays(t, -i))] || []).map(e => entryVector(e, FOOD, RECIPE))));
+    const logged = Array.from({ length: 7 }, (_, i) => state.journal[dayKey(addDays(t, -i))] || []);
+    // Pas d'alerte avant 3 jours notés : une moyenne sur des jours vides n'a pas de sens
+    if (logged.filter(d => d.length).length < 3) return [];
+    const days = logged.map(entries => sumVectors(entries.map(e => entryVector(e, FOOD, RECIPE))));
     const avg = sumVectors(days).map(v => v / 7);
     return NUTRIENTS.map(n => ({ ...n, value: avg[n.i], pct: Math.round((avg[n.i] / ref[n.i]) * 100) })).filter(n => n.pct < 70).sort((a, b) => a.pct - b.pct);
   }, [state.journal, state.profile]);
@@ -54,6 +57,7 @@ export default function Layout() {
       <aside className="side" aria-label="Navigation principale">
         <Logo />
         <p className="side-tag">Ce qui vous plaît, sans risque.</p>
+        {state.mode === 'demo' && <span className="badge badge-warn mode-badge">Démo · données fictives</span>}
         <nav className="stack" style={{ gap: 2 }}>
           {NAV.map(([to, label, Icon]) => (
             <NavLink key={to} to={to} className="nav-link">

@@ -20,7 +20,7 @@ function Num({ label, value, unit, onChange, min, max }) {
 
 export default function Profile() {
   const store = useStore();
-  const { state, toggleProfile, setProfile, signOut, reset, notify } = store;
+  const { state, toggleProfile, setProfile, signOut, resetDemo, notify } = store;
   const p = state.profile;
   const nav = useNavigate();
   const [forb, setForb] = useState('');
@@ -116,9 +116,17 @@ export default function Profile() {
             </section>
           )}
 
-          <section className="card card-pad row row-wrap" style={{ gap: 8 }}>
-            <button className="btn" type="button" onClick={() => { signOut(); nav('/connexion'); }}><LogOut size={16} /> Se déconnecter</button>
-            <button className="btn btn-ghost" type="button" onClick={() => { reset(); notify('Démo remise à zéro.'); }}><RotateCcw size={16} /> Réinitialiser la démo</button>
+          <section className="card card-pad stack" style={{ gap: 12 }}>
+            <h2>Compte</h2>
+            <p className="small" style={{ color: 'var(--ink-2)' }}>
+              {state.mode === 'cloud'
+                ? <>Connecté avec <b>{state.user.email}</b>. Vos réponses sont enregistrées sur votre compte.</>
+                : 'Mode démo : profil fictif, enregistré seulement dans ce navigateur.'}
+            </p>
+            <div className="row row-wrap" style={{ gap: 8 }}>
+              <button className="btn" type="button" onClick={async () => { await signOut(); nav('/connexion'); }}><LogOut size={16} /> {state.mode === 'cloud' ? 'Se déconnecter' : 'Quitter la démo'}</button>
+              {state.mode === 'demo' && <button className="btn btn-ghost" type="button" onClick={() => { resetDemo(); notify('Démo remise à zéro.'); }}><RotateCcw size={16} /> Réinitialiser la démo</button>}
+            </div>
           </section>
         </div>
       </div>

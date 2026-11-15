@@ -4,7 +4,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2, UtensilsCrossed } 
 import { useStore } from '../store.jsx';
 import { FOOD, FOODS } from '../data/foods.js';
 import { RECIPE } from '../data/recipes.js';
-import { addDays, catalog, dayKey, entryVector, fmt, fmtDay, foodAllowed, level, needs, norm, NUTRIENTS, sumVectors, today } from '../lib/logic.js';
+import { addDays, catalog, dayKey, entryVector, fmt, fmtDay, foodAllowed, level, needs, norm, NUTRIENTS, profileComplete, sumVectors, today } from '../lib/logic.js';
 import { Bar, FoodTile, Img, PageHeader, SearchInput, Segmented } from '../components/ui.jsx';
 import { useWatch } from '../components/Layout.jsx';
 
@@ -164,6 +164,9 @@ export default function Journal() {
             <h2>Apports</h2>
             <Segmented label="Période" value={view} onChange={setView} options={[['day', 'Ce jour'], ['week', 'Moyenne 7 jours']]} />
           </div>
+          {!profileComplete(state.profile) && (
+            <p className="small" style={{ color: 'var(--warn)' }}>Besoins estimés pour un adulte type. <Link className="link" to="/profil">Complétez votre profil</Link> pour des repères exacts.</p>
+          )}
           <div className="kcal">
             <span className="kcal-num num">{fmt(Math.round(shown[0]))}</span>
             <span className="small muted num">sur {fmt(ref[0])} kcal · {kcalPct} %</span>

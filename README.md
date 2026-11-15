@@ -7,13 +7,20 @@ Application web (téléphone et ordinateur) en Vite + React, publiée sur GitHub
 - Maquette : https://gatiencaillet.github.io/papille/
 - Wireframes (étape 1) : https://gatiencaillet.github.io/papille/wireframes/
 
-## Étape en cours : maquette cliquable
+## État actuel
 
-Proposition A « Tableau de bord » en haute fidélité, avec des données fictives : connexion, profil, swipe, mes goûts, recettes et filtres, fiche recette, recherche web, découvrir, journal et apports, liste de courses. Tout est interactif et reste dans le navigateur (localStorage) ; aucune donnée n’est envoyée. « Réinitialiser la démo » dans le Profil remet les données de départ.
+Proposition A « Tableau de bord » : connexion, profil, swipe, mes goûts, recettes et filtres, fiche recette, recherche web, découvrir, journal et apports, liste de courses.
 
-Déjà réel dans la maquette : la vérification de sécurité (allergènes, régimes, interdits, ingrédients composés comme le pesto ou le bouillon), les recettes non vérifiables masquées, le score des aliments, le calcul Mifflin-St Jeor, les apports du jour et sur 7 jours, la fusion des courses.
+- **Compte réel (Supabase)** : inscription, connexion par mot de passe, déconnexion. Profil, goûts, avis sur les plats, journal, liste de courses et liste de base sont enregistrés sur le compte (tables protégées par RLS : chacun ne voit que ses lignes).
+- **Démo sans compte** : bouton « Essayer la démo » sur l’écran de connexion, profil fictif gardé dans le navigateur.
+- **Déjà réel** : vérification de sécurité (allergènes, régimes, interdits, ingrédients composés comme le pesto ou le bouillon), recettes non vérifiables masquées, scores des aliments, Mifflin-St Jeor, apports du jour et sur 7 jours, fusion des courses.
+- **Encore simulé** : recherche web (résultats d’exemple), import de recettes, table CIQUAL complète (une cinquantaine d’aliments et onze recettes de démonstration).
 
-Encore simulé : comptes Supabase, recherche web (résultats d’exemple), import de recettes, table CIQUAL complète.
+## Supabase
+
+- Projet `eccernutbnunvydpfybt`. Schéma : `supabase/migrations/`.
+- La clé publiable est dans `src/lib/supabase.js` : elle est publique par conception, la sécurité repose sur les règles RLS.
+- Réglages à faire dans le tableau de bord (Authentication → URL Configuration) : Site URL `https://gatiencaillet.github.io/papille/`, Redirect URLs `https://gatiencaillet.github.io/papille/**` et `http://localhost:5173/papille/**`.
 
 ## Développer
 
@@ -22,7 +29,7 @@ npm install
 npm run dev
 ```
 
-Puis http://localhost:5173/papille/ (ajouter `?auto` pour arriver déjà connecté en développement).
+Puis http://localhost:5173/papille/ (ajouter `?auto` pour ouvrir directement la démo en développement).
 
 Chaque push sur `main` construit et publie le site (`.github/workflows/deploy.yml`).
 

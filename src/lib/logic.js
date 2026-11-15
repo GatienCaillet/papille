@@ -141,7 +141,11 @@ export const ACTIVITIES = [
 export function bmr(p) {
   return Math.round(10 * p.weight + 6.25 * p.height - 5 * p.age + (p.sex === 'F' ? -161 : 5));
 }
-export function needs(p) {
+export const profileComplete = p => [p.age, p.weight, p.height].every(v => typeof v === 'number' && v > 0);
+
+/** Besoins quotidiens. Profil incomplet : valeurs d'un adulte type, en attendant. */
+export function needs(profile) {
+  const p = profileComplete(profile) ? profile : { ...profile, age: 30, weight: 65, height: 168 };
   const k = ACTIVITIES.find(a => a.id === p.activity)?.k ?? 1.55;
   const kcal = Math.round(bmr(p) * k);
   return [kcal, Math.round(0.83 * p.weight), Math.round((kcal * 0.5) / 4), Math.round((kcal * 0.35) / 9), 30, p.sex === 'F' ? 11 : 11, 950, p.sex === 'F' ? 300 : 380, 110, 15, 4];

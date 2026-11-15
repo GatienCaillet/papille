@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { StoreProvider, useStore } from './store.jsx';
-import Layout from './components/Layout.jsx';
+import Layout, { Logo } from './components/Layout.jsx';
 import Login from './screens/Login.jsx';
 import Profile from './screens/Profile.jsx';
 import Swipe from './screens/Swipe.jsx';
@@ -19,9 +19,20 @@ function ScrollTop() {
   return null;
 }
 
+function Splash() {
+  return <div className="splash" role="status"><Logo /><span className="small muted">Chargement de vos données…</span></div>;
+}
+
 function Guard({ children }) {
-  const { state } = useStore();
-  return state.signedIn ? children : <Navigate to="/connexion" replace />;
+  const { state, ready } = useStore();
+  if (!ready && state.mode !== 'demo') return <Splash />;
+  return state.mode ? children : <Navigate to="/connexion" replace />;
+}
+
+function LoginRoute() {
+  const { state, ready } = useStore();
+  if (!ready && !state.mode) return <Splash />;
+  return state.mode ? <Navigate to="/recettes" replace /> : <Login />;
 }
 
 export default function App() {
@@ -30,7 +41,7 @@ export default function App() {
       <HashRouter>
         <ScrollTop />
         <Routes>
-          <Route path="/connexion" element={<Login />} />
+          <Route path="/connexion" element={<LoginRoute />} />
           <Route element={<Guard><Layout /></Guard>}>
             <Route index element={<Navigate to="/recettes" replace />} />
             <Route path="/recettes" element={<Recipes />} />
