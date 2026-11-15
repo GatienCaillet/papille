@@ -2,29 +2,36 @@
 
 Manger ce qu’on aime, sans jamais risquer ce qu’on ne peut pas manger.
 
-Application web (téléphone et ordinateur) hébergée sur GitHub Pages, avec Supabase pour les comptes et les données.
+Application web (téléphone et ordinateur) en Vite + React, publiée sur GitHub Pages. Supabase servira aux comptes et aux données.
 
-## Étape en cours : wireframes
+- Maquette : https://gatiencaillet.github.io/papille/
+- Wireframes (étape 1) : https://gatiencaillet.github.io/papille/wireframes/
 
-Trois propositions de structure, chacune montrant tous les écrans en version téléphone et ordinateur :
+## Étape en cours : maquette cliquable
 
-- **A · Tableau de bord** : `wireframes/a.html`
-- **B · Vitrine gourmande** : `wireframes/b.html`
-- **C · Carnet éditorial** : `wireframes/c.html`
+Proposition A « Tableau de bord » en haute fidélité, avec des données fictives : connexion, profil, swipe, mes goûts, recettes et filtres, fiche recette, recherche web, découvrir, journal et apports, liste de courses. Tout est interactif et reste dans le navigateur (localStorage) ; aucune donnée n’est envoyée. « Réinitialiser la démo » dans le Profil remet les données de départ.
 
-Ouvrir `index.html` pour les comparer. Un seul écran : `wireframes/a.html?ecran=journal`.
+Déjà réel dans la maquette : la vérification de sécurité (allergènes, régimes, interdits, ingrédients composés comme le pesto ou le bouillon), les recettes non vérifiables masquées, le score des aliments, le calcul Mifflin-St Jeor, les apports du jour et sur 7 jours, la fusion des courses.
 
-En local :
+Encore simulé : comptes Supabase, recherche web (résultats d’exemple), import de recettes, table CIQUAL complète.
+
+## Développer
 
 ```bash
-npx --yes http-server@14.1.1 . -p 4322 -c-1
+npm install
+npm run dev
 ```
 
-## Fonctionnalités prévues
+Puis http://localhost:5173/papille/ (ajouter `?auto` pour arriver déjà connecté en développement).
 
-- Compte : inscription, connexion par mot de passe, déconnexion (Supabase Auth).
-- Profil : 14 allergènes UE, régimes, aliments interdits, besoins caloriques (Mifflin-St Jeor) et références par nutriment.
-- Sécurité : exclusion des recettes dont un ingrédient, même caché (pesto, bouillon), touche le profil ; recettes non vérifiables masquées par défaut, avertissement rouge sinon.
-- Swipe des goûts : 200 aliments de base puis tout CIQUAL.
-- Mes goûts : 4 listes, score par aliment propagé aux ingrédients et au groupe.
-- Recettes, recherche web, découvertes, journal des apports, liste de courses.
+Chaque push sur `main` construit et publie le site (`.github/workflows/deploy.yml`).
+
+## Repères
+
+- `PRODUCT.md` : le produit, ses règles, ses contraintes.
+- `DESIGN.md` : le système visuel (couleurs, typo, composants).
+- `src/lib/logic.js` : sécurité, goûts, nutrition, courses.
+- `src/data/` : aliments et recettes de démonstration.
+- `public/wireframes/` : les trois wireframes de l’étape 1.
+
+Photos de plats : Unsplash (licence Unsplash).

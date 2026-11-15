@@ -110,7 +110,7 @@ const WF = {
     const variants = [['index.html', 'Accueil'], ['a.html', 'A · Tableau de bord'], ['b.html', 'B · Vitrine'], ['c.html', 'C · Carnet']];
     document.body.insertAdjacentHTML('afterbegin', `
       <header class="pg-top">
-        <a class="pg-brand" href="../index.html">Papille <span>· wireframes</span></a>
+        <a class="pg-brand" href="index.html">Papille <span>· wireframes</span></a>
         <nav class="pg-seg">${variants.slice(1).map(([h, l]) => `<a href="${h}" class="${h.startsWith(V.key) ? 'on' : ''}">${l}</a>`).join('')}</nav>
         <div class="pg-seg" id="view"><button data-v="both" class="on">Les deux</button><button data-v="m">Téléphone</button><button data-v="d">Ordinateur</button></div>
       </header>

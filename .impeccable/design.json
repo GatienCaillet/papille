@@ -1,0 +1,25 @@
+{
+  "name": "Papille",
+  "source": "src/styles/app.css, src/styles/screens.css",
+  "shadows": {
+    "depth-1": "0 1px 2px rgba(24, 38, 30, .05)",
+    "depth-2": "0 1px 2px rgba(24, 38, 30, .04), 0 10px 28px -14px rgba(24, 38, 30, .22)",
+    "depth-3": "0 2px 6px rgba(24, 38, 30, .08), 0 24px 48px -20px rgba(24, 38, 30, .35)"
+  },
+  "motion": {
+    "ease": "cubic-bezier(.22, 1, .36, 1)",
+    "swipe-release": "transform .35s ease",
+    "swipe-fly-out": "260ms",
+    "toast-in": ".45s",
+    "reduced-motion": "all transitions collapsed to .01ms"
+  },
+  "focus": "2.5px solid var(--brand), offset 2px",
+  "selection": "background var(--sage-2)",
+  "breakpoints": { "shell": "900px", "columns": "1100px", "taste-board": "1200px" },
+  "food-group-tints": {
+    "legume": ["#dcebd2", "#3d6b2f"], "racine": ["#fbe3cf", "#a2531a"], "fruit": ["#fadfe0", "#a33a44"],
+    "feculent": ["#f3e8cf", "#8a6a22"], "legumineuse": ["#eadfd2", "#7a5536"], "viande": ["#f6dcd6", "#9b3f2e"],
+    "poisson": ["#d9e8f0", "#2f6680"], "laitier": ["#e6e7f2", "#4e5590"], "epice": ["#e3ead7", "#56692d"], "champignon": ["#e9e3dc", "#6c5a48"]
+  },
+  "imagery": "Photos de plats Unsplash (licence Unsplash), liées depuis images.unsplash.com ; aucune image générée."
+}
