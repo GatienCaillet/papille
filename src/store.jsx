@@ -23,13 +23,13 @@ const EMPTY = {
 const F = (ref, qty) => ({ kind: 'food', ref, qty });
 const R = (ref, qty) => ({ kind: 'recipe', ref, qty });
 const HISTORY = [
-  [F('flocons-avoine', 60), F('lait', 200), R('curry', 1.5), F('pomme', 150), R('poulet', .5), F('yaourt', 125)],
-  [F('flocons-avoine', 50), F('lait', 200), R('penne', 1), F('pomme', 150), F('yaourt', 125)],
-  [F('pain-complet', 100), F('oeuf', 100), R('chili', 1), F('banane', 120)],
-  [F('flocons-avoine', 60), F('lait', 250), R('poulet', 1), F('poire', 150), R('risotto', 1)],
-  [F('pain-complet', 80), F('yaourt', 125), R('curry', 1), F('pomme', 150), R('ratatouille', 1)],
-  [F('flocons-avoine', 50), F('lait', 200), R('veloute', 1.5), R('pancakes', 1), F('banane', 120)],
-  [F('pain-complet', 100), F('oeuf', 50), R('bowl', 1), R('penne', 1)],
+  [F('32140', 60), F('19041', 200), R('curry', 1.5), F('13039', 150), R('poulet', .5), F('19860', 125)],
+  [F('32140', 50), F('19041', 200), R('penne', 1), F('13039', 150), F('19860', 125)],
+  [F('7110', 100), F('22000', 100), R('chili', 1), F('13005', 120)],
+  [F('32140', 60), F('19041', 250), R('poulet', 1), F('13037', 150), R('risotto', 1)],
+  [F('7110', 80), F('19860', 125), R('curry', 1), F('13039', 150), R('ratatouille', 1)],
+  [F('32140', 50), F('19041', 200), R('veloute', 1.5), R('pancakes', 1), F('13005', 120)],
+  [F('7110', 100), F('22000', 50), R('bowl', 1), R('penne', 1)],
 ];
 
 /** Profil fictif de la démo (sans compte). */

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, Compass, Heart, HelpCircle, ThumbsDown, X } from 'lucide-react';
 import { useStore } from '../store.jsx';
-import { GROUPS } from '../data/foods.js';
+import { FAMILLES } from '../data/foods.js';
 import { discoveries, reasonFor } from '../lib/logic.js';
 import { FoodTile, Img, PageHeader, Score } from '../components/ui.jsx';
 
@@ -15,7 +15,7 @@ export default function Discover() {
 
   const respond = (food, v) => {
     answer(food.id, v);
-    notify(v === 'like' ? `${food.name} rejoint « J’aime ».` : v === 'dislike' ? `${food.name} rejoint « Je n’aime pas ».` : `${food.name} : pas encore goûté.`, { to: '/gouts/listes', label: 'Mes listes' });
+    notify(v === 'like' ? `${food.nom} rejoint « J’aime ».` : v === 'dislike' ? `${food.nom} rejoint « Je n’aime pas ».` : `${food.nom} : pas encore goûté.`, { to: '/gouts/listes', label: 'Mes listes' });
     setSelId(null);
   };
 
@@ -35,8 +35,8 @@ export default function Discover() {
                   <button type="button" className="disc-pick" onClick={() => setSelId(d.food.id)} aria-pressed={on}>
                     <FoodTile food={d.food} size={64} />
                     <span className="stack grow" style={{ gap: 2, alignItems: 'flex-start' }}>
-                      <span className="row" style={{ gap: 8 }}><span className="h3">{d.food.name}</span><Score value={d.score.total} /></span>
-                      <span className="xs muted">{GROUPS[d.food.group].label}</span>
+                      <span className="row" style={{ gap: 8 }}><span className="h3">{d.food.nom}</span><Score value={d.score.total} /></span>
+                      <span className="xs muted">{FAMILLES[d.food.famille]?.label}</span>
                     </span>
                   </button>
                   <p className="small" style={{ color: 'var(--ink-2)' }}>{reasonFor(d)}</p>
@@ -51,7 +51,7 @@ export default function Discover() {
           </div>
 
           <section className="stack" style={{ gap: 14 }}>
-            <h2 className="h2">Pour goûter : {sel.food.name.toLowerCase()}</h2>
+            <h2 className="h2">Pour goûter : {sel.food.nom.toLowerCase()}</h2>
             <div className="rgrid">
               {sel.recipes.map(({ r, match }) => {
                 const op = state.opinions[r.id];

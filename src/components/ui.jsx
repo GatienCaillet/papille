@@ -1,8 +1,9 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Apple, Bean, Carrot, Clock, Drumstick, Fish, Flame, Leaf, Milk, Minus, Plus, Salad, Search, Sprout, TriangleAlert, Wheat, X } from 'lucide-react';
+import { Apple, Bean, Candy, Carrot, Clock, Droplet, Drumstick, Fish, Flame, Leaf, Milk, Minus, Plus, Salad, Search, Soup, Sprout, TriangleAlert, Wheat, X } from 'lucide-react';
+import { FAMILLES } from '../data/foods.js';
 
-const Icons = { Apple, Bean, Carrot, Drumstick, Fish, Leaf, Milk, Salad, Sprout, Wheat };
-import { GROUPS } from '../data/foods.js';
+const Icons = { Apple, Bean, Candy, Carrot, Droplet, Drumstick, Fish, Leaf, Milk, Salad, Soup, Sprout, Wheat };
+const TINT_ICON = { legume: 'Carrot', fruit: 'Apple', feculent: 'Wheat', legumineuse: 'Bean', viande: 'Drumstick', poisson: 'Fish', laitier: 'Milk', epice: 'Leaf', sauce: 'Soup', sucre: 'Candy', gras: 'Droplet' };
 import { photo } from '../data/recipes.js';
 import { useStore } from '../store.jsx';
 
@@ -71,11 +72,12 @@ export function SearchInput({ value, onChange, placeholder, autoFocus, onKeyDown
   );
 }
 
-export function FoodTile({ food, size = 44 }) {
-  const g = GROUPS[food.group];
-  const Icon = Icons[g.icon] || Icons.Leaf;
+/** Vignette d'aliment : `food` du référentiel (famille), ou `tint` direct pour un aliment CIQUAL. */
+export function FoodTile({ food, tint, size = 44 }) {
+  const t = tint || FAMILLES[food?.famille]?.tint || 'legume';
+  const Icon = Icons[(food && FAMILLES[food.famille]?.icon) || TINT_ICON[t]] || Leaf;
   return (
-    <span className="ftile" style={{ width: size, height: size, background: `var(--g-${food.group})`, color: `var(--g-${food.group}-ink)` }} aria-hidden="true">
+    <span className="ftile" style={{ width: size, height: size, background: `var(--g-${t})`, color: `var(--g-${t}-ink)` }} aria-hidden="true">
       <Icon />
     </span>
   );

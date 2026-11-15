@@ -32,7 +32,7 @@ export default function RecipeDetail() {
 
   const setOp = v => {
     opinion(r.id, v);
-    if (op !== v) notify(v === 'like' ? `Noté : vous aimez. ${listFr(r.main.map(m => FOOD[m].name.toLowerCase()))} montent.` : 'Noté : vous n’aimez pas ce plat.');
+    if (op !== v) notify(v === 'like' ? `Noté : vous aimez. ${listFr(r.main.map(m => FOOD[m].nom.toLowerCase()))} montent.` : 'Noté : vous n’aimez pas ce plat.');
   };
 
   const safety = !check.safe ? (

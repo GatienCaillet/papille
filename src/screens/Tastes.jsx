@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, Heart, HelpCircle, X } from 'lucide-react';
 import { useStore } from '../store.jsx';
-import { FOODS, GROUPS } from '../data/foods.js';
+import { FAMILLES, FOOD, FOODS } from '../data/foods.js';
 import { foodAllowed, foodScore, norm } from '../lib/logic.js';
 import { FoodTile, PageHeader, Score, SearchInput } from '../components/ui.jsx';
 import { TasteTabs } from './Swipe.jsx';
@@ -34,8 +34,8 @@ function FoodRow({ food, s, open, onToggle, onAnswer, current }) {
       <div className="row" style={{ gap: 12 }}>
         <FoodTile food={food} size={38} />
         <button type="button" className="grow food-name" onClick={onToggle} aria-expanded={open}>
-          <span className="small b">{food.name}</span>
-          <span className="xs muted">{GROUPS[food.group].label}</span>
+          <span className="small b">{food.nom}</span>
+          <span className="xs muted">{FAMILLES[food.famille]?.label}</span>
         </button>
         <Score value={s.total} />
         <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={onToggle} aria-label="Détail du score"><ChevronDown size={16} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s' }} /></button>
@@ -45,7 +45,7 @@ function FoodRow({ food, s, open, onToggle, onAnswer, current }) {
           <dl>
             <div><dt>Votre réponse</dt><dd className="num">{s.direct > 0 ? '+' : ''}{s.direct}</dd></div>
             {s.dishes.map(d => <div key={d.name}><dt>Plat noté : {d.name}</dt><dd className="num">{d.delta > 0 ? '+' : '−'}{Math.abs(d.delta)}</dd></div>)}
-            <div><dt>Famille « {GROUPS[food.group].label.toLowerCase()} »</dt><dd className="num">{s.group > 0 ? '+' : s.group < 0 ? '−' : ''}{Math.abs(s.group)}</dd></div>
+            <div><dt>Famille « {(s.parent || FAMILLES[food.famille]?.label || '').toLowerCase()} »</dt><dd className="num">{s.group > 0 ? '+' : s.group < 0 ? '−' : ''}{Math.abs(s.group)}</dd></div>
           </dl>
           <div className="row between row-wrap" style={{ gap: 8 }}>
             <span className="xs muted">Déplacer vers</span>
@@ -62,23 +62,28 @@ export default function Tastes() {
   const [tab, setTab] = useState('like');
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(null);
-  const [more, setMore] = useState(false);
+  const [more, setMore] = useState(12);
 
   const scored = useMemo(() => FOODS.filter(f => foodAllowed(f, state.profile)).map(f => ({ food: f, s: foodScore(f.id, state.answers, state.opinions), a: state.answers[f.id] || 'unknown' })), [state]);
   const lists = useMemo(() => Object.fromEntries(LISTS.map(([k]) => [k, scored.filter(x => x.a === k).sort((a, b) => (k === 'dislike' ? a.s.total - b.s.total : b.s.total - a.s.total))])), [scored]);
-  const results = q.trim().length > 1 ? scored.filter(x => norm(x.food.name).includes(norm(q))).slice(0, 6) : [];
+  // Recherche dans les noms et les autres appellations (« patate » trouve la pomme de terre)
+  const results = q.trim().length > 1
+    ? scored.filter(x => [x.food.nom, ...(x.food.alias || [])].some(n => norm(n).includes(norm(q))))
+      .sort((a, b) => Number(!norm(a.food.nom).startsWith(norm(q))) - Number(!norm(b.food.nom).startsWith(norm(q))))
+      .slice(0, 6)
+    : [];
 
   const onAnswer = (id, v) => {
     answer(id, v);
-    const name = FOODS.find(f => f.id === id).name;
+    const name = FOOD[id].nom;
     notify(v ? `${name} → ${LISTS.find(l => l[0] === v)[1]}` : `${name} → Inconnu`);
   };
 
   const column = ([k, label]) => {
-    const items = k === 'unknown' && !more ? lists[k].slice(0, 12) : lists[k];
+    const items = k === 'unknown' ? lists[k].slice(0, more) : lists[k];
     return (
     <section key={k} className={`taste-col card ${k === tab ? 'is-current' : ''}`} aria-label={label}>
-      <header className="row between"><h2 className="h3">{label}</h2><span className="small muted num">{k === 'unknown' ? `${lists[k].length} (+ 3 135 CIQUAL)` : lists[k].length}</span></header>
+      <header className="row between"><h2 className="h3">{label}</h2><span className="small muted num">{lists[k].length.toLocaleString('fr-FR')}</span></header>
       {lists[k].length === 0 ? <p className="small muted" style={{ padding: '8px 0' }}>Rien ici pour l’instant.</p> : (
         <ul className="list">
           {items.map(x => (
@@ -87,8 +92,8 @@ export default function Tastes() {
         </ul>
       )}
       {items.length < lists[k].length && (
-        <button type="button" className="btn btn-ghost btn-sm btn-block" style={{ margin: '4px 0 8px' }} onClick={() => setMore(true)}>
-          Voir les {lists[k].length - items.length} autres
+        <button type="button" className="btn btn-ghost btn-sm btn-block" style={{ margin: '4px 0 8px' }} onClick={() => setMore(m => m + 30)}>
+          Voir 30 de plus <span className="muted">· {(lists[k].length - items.length).toLocaleString('fr-FR')} restants</span>
         </button>
       )}
     </section>
@@ -107,7 +112,7 @@ export default function Tastes() {
               {results.map(x => (
                 <li key={x.food.id} className="row" style={{ gap: 10 }}>
                   <FoodTile food={x.food} size={32} />
-                  <span className="grow small"><b>{x.food.name}</b> <span className="muted">· {GROUPS[x.food.group].label}</span></span>
+                  <span className="grow small"><b>{x.food.nom}</b> <span className="muted">· {FAMILLES[x.food.famille]?.label}</span></span>
                   <AnswerButtons id={x.food.id} current={state.answers[x.food.id]} onAnswer={(id, v) => { onAnswer(id, v); setQ(''); }} />
                 </li>
               ))}

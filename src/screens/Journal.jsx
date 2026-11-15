@@ -2,13 +2,24 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2, UtensilsCrossed } from 'lucide-react';
 import { useStore } from '../store.jsx';
-import { FOOD, FOODS } from '../data/foods.js';
+import { CIQUAL, FOODS, ciqualTint } from '../data/foods.js';
 import { RECIPE } from '../data/recipes.js';
-import { addDays, catalog, dayKey, entryVector, fmt, fmtDay, foodAllowed, level, needs, norm, NUTRIENTS, profileComplete, sumVectors, today } from '../lib/logic.js';
+import { addDays, catalog, dayKey, entryVector, fmt, fmtDay, foodAllowed, journalFood, level, needs, norm, NUTRIENTS, profileComplete, sumVectors, today } from '../lib/logic.js';
 import { Bar, FoodTile, Img, PageHeader, SearchInput, Segmented } from '../components/ui.jsx';
 import { useWatch } from '../components/Layout.jsx';
 
-const LOGGABLE_FOODS = FOODS.filter(f => f.n);
+/** Recherche dans toute la table CIQUAL : tous les mots doivent y être ; les noms qui commencent par la saisie d'abord. */
+function searchCiqual(q) {
+  const words = norm(q).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const first = words[0];
+  return Object.values(CIQUAL)
+    .map(c => ({ c, n: norm(c.nom) }))
+    .filter(x => words.every(w => x.n.includes(w)))
+    .sort((a, b) => Number(!a.n.startsWith(first)) - Number(!b.n.startsWith(first)) || a.n.length - b.n.length)
+    .slice(0, 8)
+    .map(x => ({ id: x.c.code, name: x.c.nom, ciqual: x.c }));
+}
 
 function AddEntry({ day }) {
   const { state, addEntry, notify } = useStore();
@@ -17,10 +28,11 @@ function AddEntry({ day }) {
   const [pick, setPick] = useState(null);
   const [qty, setQty] = useState('');
   const recipes = useMemo(() => catalog(state).visible.map(x => x.r), [state]);
-  const options = kind === 'food'
-    ? LOGGABLE_FOODS.filter(f => foodAllowed(f, state.profile)).map(f => ({ id: f.id, name: f.name, food: f }))
-    : recipes.map(r => ({ id: r.id, name: r.name, recipe: r }));
-  const results = q && !pick ? options.filter(o => norm(o.name).includes(norm(q))).slice(0, 5) : [];
+  const results = useMemo(() => {
+    if (!q || pick) return [];
+    if (kind === 'food') return searchCiqual(q);
+    return recipes.filter(r => norm(r.name).includes(norm(q))).slice(0, 5).map(r => ({ id: r.id, name: r.name, recipe: r }));
+  }, [q, pick, kind, recipes]);
 
   const submit = e => {
     e.preventDefault();
@@ -45,8 +57,11 @@ function AddEntry({ day }) {
               {results.map(o => (
                 <li key={o.id}>
                   <button type="button" className="row pop-item" onClick={() => { setPick(o); setQty(kind === 'food' ? '100' : '1'); }}>
-                    {o.food ? <FoodTile food={o.food} size={30} /> : <span className="pop-img"><Img id={o.recipe.img} alt="" w={80} /></span>}
-                    <span className="small">{o.name}</span>
+                    {o.ciqual ? <FoodTile tint={ciqualTint(o.ciqual.groupe)} size={30} /> : <span className="pop-img"><Img id={o.recipe.img} alt="" w={80} /></span>}
+                    <span className="stack" style={{ gap: 0 }}>
+                      <span className="small">{o.name}</span>
+                      {o.ciqual && <span className="xs muted">{o.ciqual.sousGroupe || o.ciqual.groupe} · {fmt(o.ciqual.n[0] ?? 0)} kcal / 100 g</span>}
+                    </span>
                   </button>
                 </li>
               ))}
@@ -75,9 +90,9 @@ export default function Journal() {
   const ref = needs(state.profile);
   const watch = useWatch();
 
-  const totals = useMemo(() => sumVectors(entries.map(e => entryVector(e, FOOD, RECIPE))), [entries]);
+  const totals = useMemo(() => sumVectors(entries.map(e => entryVector(e, null, RECIPE))), [entries]);
   const week = useMemo(() => {
-    const vs = Array.from({ length: 7 }, (_, i) => sumVectors((state.journal[dayKey(addDays(day, -i))] || []).map(e => entryVector(e, FOOD, RECIPE))));
+    const vs = Array.from({ length: 7 }, (_, i) => sumVectors((state.journal[dayKey(addDays(day, -i))] || []).map(e => entryVector(e, null, RECIPE))));
     return sumVectors(vs).map(v => v / 7);
   }, [state.journal, key]); // eslint-disable-line react-hooks/exhaustive-deps
   const shown = view === 'day' ? totals : week;
@@ -87,7 +102,9 @@ export default function Journal() {
   const suggest = useMemo(() => {
     const recipes = catalog(state).visible;
     return watch.slice(0, 3).map(w => {
-      const ranked = LOGGABLE_FOODS.filter(f => foodAllowed(f, state.profile) && state.answers[f.id] !== 'dislike').sort((a, b) => b.n[w.i] - a.n[w.i]);
+      // Aliments courants (présents dans les recettes), sûrs pour le profil et pas « je n'aime pas »
+      // (pas les herbes ni les condiments : riches pour 100 g, mais on en mange quelques grammes)
+      const ranked = FOODS.filter(f => f.rang && f.n && f.n[w.i] != null && !['herbes-epices', 'condiments-sauces'].includes(f.famille)).filter(f => foodAllowed(f, state.profile) && state.answers[f.id] !== 'dislike').sort((a, b) => b.n[w.i] - a.n[w.i]);
       const best = ranked[0]?.n[w.i] || 0;
       return {
       ...w,
@@ -116,7 +133,7 @@ export default function Journal() {
         {strip.map((d, i) => {
           const o = i - 6;
           const k = dayKey(d);
-          const kc = sumVectors((state.journal[k] || []).map(e => entryVector(e, FOOD, RECIPE)))[0];
+          const kc = sumVectors((state.journal[k] || []).map(e => entryVector(e, null, RECIPE)))[0];
           return (
             <button key={k} type="button" role="tab" aria-selected={o === offset} className="day" onClick={() => setOffset(o)}>
               <span className="day-w">{d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}</span>
@@ -141,16 +158,18 @@ export default function Journal() {
               <ul className="list entries">
                 {entries.map(e => {
                   const isFood = e.kind === 'food';
-                  const item = isFood ? FOOD[e.ref] : RECIPE[e.ref];
+                  const f = isFood ? journalFood(e.ref) : null;
+                  const r = isFood ? null : RECIPE[e.ref];
+                  const name = isFood ? (f?.nom || `Aliment ${e.ref}`) : (r?.name || 'Recette supprimée');
                   return (
                     <li key={e.id} className="row" style={{ gap: 12 }}>
-                      {isFood ? <FoodTile food={item} size={40} /> : <span className="entry-img"><Img id={item.img} alt="" w={96} /></span>}
+                      {isFood ? <FoodTile tint={ciqualTint(f?.groupe)} size={40} /> : r?.img ? <span className="entry-img"><Img id={r.img} alt="" w={96} /></span> : <FoodTile tint="sauce" size={40} />}
                       <span className="stack grow" style={{ gap: 0 }}>
-                        <span className="small b">{item.name}</span>
+                        <span className="small b">{name}</span>
                         <span className="xs muted num">{isFood ? `${fmt(e.qty)} g` : `${fmt(e.qty)} portion${e.qty > 1 ? 's' : ''}`}</span>
                       </span>
-                      <span className="small num">{fmt(Math.round(entryVector(e, FOOD, RECIPE)[0]))} kcal</span>
-                      <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => removeEntry(key, e.id)} aria-label={`Retirer ${item.name}`}><Trash2 size={15} /></button>
+                      <span className="small num">{fmt(Math.round(entryVector(e, null, RECIPE)[0]))} kcal</span>
+                      <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => removeEntry(key, e.id)} aria-label={`Retirer ${name}`}><Trash2 size={15} /></button>
                     </li>
                   );
                 })}
@@ -189,6 +208,7 @@ export default function Journal() {
             })}
           </ul>
           <div className="legend xs"><span><i className="dot dot-bad" /> moins de 70 %</span><span><i className="dot dot-warn" /> 70 à 89 %</span><span><i className="dot dot-ok" /> 90 % et plus</span></div>
+          <p className="xs muted">Nutriments : Table Ciqual 2025, Anses (Licence Ouverte). Une valeur non mesurée compte pour zéro.</p>
         </section>
       </div>
 
@@ -204,7 +224,7 @@ export default function Journal() {
                 <div className="row between"><span className="h3">{w.label}</span><span className="badge badge-bad num">{w.pct} %</span></div>
                 <span className="xs muted">Aliments</span>
                 <div className="row row-wrap" style={{ gap: 6 }}>
-                  {w.foods.map(f => <span key={f.id} className="food-pill"><FoodTile food={f} size={22} />{f.name}</span>)}
+                  {w.foods.map(f => <span key={f.id} className="food-pill"><FoodTile food={f} size={22} />{f.nom}</span>)}
                 </div>
                 <span className="xs muted">Recettes</span>
                 <div className="stack" style={{ gap: 6 }}>

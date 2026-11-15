@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Heart, HelpCircle, Undo2, X } from 'lucide-react';
 import { useStore } from '../store.jsx';
-import { FOOD, FOODS, GROUPS } from '../data/foods.js';
+import { BASE_COUNT, FAMILLES, FOOD, FOODS, isBase } from '../data/foods.js';
 import { RECIPE } from '../data/recipes.js';
 import { catalog, foodAllowed, listFr } from '../lib/logic.js';
 import { FoodTile, Img, PageHeader, Switch } from '../components/ui.jsx';
@@ -27,7 +27,8 @@ export default function Swipe() {
 
   const deck = useMemo(() => {
     // Ordre stable (plat, aliment, plat…) puis on retire ce qui est déjà noté
-    const foods = FOODS.filter(f => foodAllowed(f, state.profile)).map(f => ({ kind: 'food', ref: f.id }));
+    // Base : les 200 ingrédients les plus utilisés dans les recettes ; sinon tout le référentiel
+    const foods = FOODS.filter(f => (all || isBase(f)) && foodAllowed(f, state.profile)).map(f => ({ kind: 'food', ref: f.id }));
     const dishes = catalog(state).visible.map(x => ({ kind: 'dish', ref: x.r.id }));
     const out = [];
     for (let i = 0; i < Math.max(foods.length, dishes.length); i++) {
@@ -35,11 +36,12 @@ export default function Swipe() {
       if (foods[i]) out.push(foods[i]);
     }
     return out.filter(c => !(c.kind === 'food' ? state.answers[c.ref] : state.opinions[c.ref]));
-  }, [state]);
+  }, [state, all]);
 
   const card = deck[0];
   const next = deck[1];
-  const rated = FOODS.filter(f => state.answers[f.id]).length;
+  const pool = all ? FOODS : FOODS.filter(isBase);
+  const rated = pool.filter(f => state.answers[f.id]).length;
 
   const commit = useCallback(value => {
     if (!card || drag.out) return;
@@ -99,10 +101,10 @@ export default function Swipe() {
         <section className="swipe-stage">
           <div className="card card-pad deck-progress">
             <div className="row between small">
-              <span><b>{all ? 'Tout CIQUAL' : 'Base'}</b> · <span className="num">{rated}</span> notés sur <span className="num">{all ? '3 185' : '200'}</span></span>
-              <Switch checked={all} onChange={setAll}>Tout CIQUAL</Switch>
+              <span><b>{all ? 'Tous les aliments' : `Les ${BASE_COUNT} de base`}</b> · <span className="num">{rated}</span> notés sur <span className="num">{pool.length.toLocaleString('fr-FR')}</span></span>
+              <Switch checked={all} onChange={setAll}>Tous ({FOODS.length.toLocaleString('fr-FR')})</Switch>
             </div>
-            <span className="bar c-brand"><i style={{ width: `${(rated / (all ? 3185 : 200)) * 100}%` }} /></span>
+            <span className="bar c-brand"><i style={{ width: `${(rated / pool.length) * 100}%` }} /></span>
           </div>
 
           <div className="deck" aria-live="polite">
@@ -142,13 +144,13 @@ export default function Swipe() {
           {last.length === 0 && <p className="small muted">Vos réponses apparaîtront ici, avec leur effet sur vos goûts.</p>}
           <ul className="list">
             {last.map((l, i) => {
-              const name = l.card.kind === 'food' ? FOOD[l.card.ref].name : RECIPE[l.card.ref].name;
+              const name = l.card.kind === 'food' ? FOOD[l.card.ref]?.nom : RECIPE[l.card.ref]?.name;
               const tone = l.value === 'like' ? 'ok' : l.value === 'dislike' ? 'bad' : 'warn';
               return (
                 <li key={i} className="last-row">
                   <div className="row between"><span className="small b">{name}</span><span className={`badge badge-${tone}`}>{LABEL[l.value]}</span></div>
                   {l.card.kind === 'dish' && l.value !== 'unsure' && (
-                    <span className="xs muted">{l.value === 'like' ? '+8' : '−8'} sur {listFr(RECIPE[l.card.ref].main.map(m => FOOD[m].name.toLowerCase()))}</span>
+                    <span className="xs muted">{l.value === 'like' ? '+8' : '−8'} sur {listFr(RECIPE[l.card.ref].main.map(m => FOOD[m].nom.toLowerCase()))}</span>
                   )}
                 </li>
               );
@@ -178,11 +180,11 @@ function SwipeCard({ item, behind }) {
   const f = FOOD[item.ref];
   return (
     <>
-      <div className="sc-media sc-food" style={{ background: `var(--g-${f.group})` }}><FoodTile food={f} size={132} /></div>
+      <div className="sc-media sc-food" style={{ background: `var(--g-${FAMILLES[f.famille]?.tint || 'legume'})` }}><FoodTile food={f} size={132} /></div>
       <div className="sc-body">
-        <span className="row" style={{ gap: 6 }}><span className="badge">Aliment</span><span className="xs muted">{GROUPS[f.group].label}</span></span>
-        <span className="sc-title">{f.name}</span>
-        <span className="small muted">Table CIQUAL</span>
+        <span className="row" style={{ gap: 6 }}><span className="badge">Aliment</span><span className="xs muted">{FAMILLES[f.famille]?.label}</span></span>
+        <span className="sc-title">{f.nom}</span>
+        <span className="small muted">{FOOD[f.parent] ? `Famille : ${FOOD[f.parent].nom.toLowerCase()}` : ' '}</span>
       </div>
     </>
   );

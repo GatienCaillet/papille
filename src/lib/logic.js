@@ -1,8 +1,8 @@
-import { FOODS, FOOD, GROUPS } from '../data/foods.js';
+import { ALLERGEN_CODE, CIQUAL, FAMILLES, FOOD, FOODS, allergensOf, expand, namesOf } from '../data/foods.js';
 import { RECIPES } from '../data/recipes.js';
 
 /* ---------- Texte ---------- */
-export const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+export const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/œ/g, 'oe').replace(/’/g, "'").trim();
 const nf = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 export const fmt = n => nf.format(n);
 const PLURAL = new Set(['gousse', 'boîte', 'tranche', 'sachet', 'bouquet']);
@@ -16,33 +16,55 @@ export function fmtQty(qty, unit, buy = false) {
   const u = unit && PLURAL.has(unit) && q > 1 ? unit + 's' : unit;
   return u ? `${fmt(q)} ${u}` : fmt(q);
 }
+export const listFr = a => (a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} et ${a[a.length - 1]}`);
 
 /* ---------- Profil et sécurité ---------- */
-export const ALLERGENS = ['Gluten', 'Crustacés', 'Œufs', 'Poissons', 'Arachides', 'Soja', 'Lait', 'Fruits à coque', 'Céleri', 'Moutarde', 'Sésame', 'Sulfites', 'Lupin', 'Mollusques'];
+export const ALLERGENS = Object.keys(ALLERGEN_CODE);
 export const REGIMES = ['Végétarien', 'Végétalien', 'Sans viande', 'Sans porc', 'Sans alcool', 'Sans gluten', 'Sans lait'];
-const RULES = {
-  'Végétarien': { tags: ['viande', 'poisson'] },
-  'Végétalien': { tags: ['viande', 'poisson', 'animal'] },
-  'Sans viande': { tags: ['viande'] },
-  'Sans porc': { tags: ['porc'] },
-  'Sans alcool': { tags: ['alcool'] },
-  'Sans gluten': { allergens: ['Gluten'] },
-  'Sans lait': { allergens: ['Lait'] },
-};
-const GROUP_TAGS = { viande: ['viande', 'animal'], poisson: ['poisson', 'animal'], laitier: ['animal'] };
-const FOOD_ALLERGENS = { saumon: ['Poissons'], sardine: ['Poissons'], maquereau: ['Poissons'], lait: ['Lait'], yaourt: ['Lait'], parmesan: ['Lait'], oeuf: ['Œufs'], pates: ['Gluten'], 'pain-complet': ['Gluten'], boulgour: ['Gluten'], 'flocons-avoine': ['Gluten'], tofu: ['Soja'] };
 
+// Un régime exclut : des catégories du référentiel (et tout ce qui en descend ou les contient),
+// des familles entières, des allergènes. `tags` couvre les ingrédients saisis sans lien au référentiel.
+const RULES = {
+  'Végétarien': { roots: ['viande', 'poisson', 'fruit_de_mer', 'gelatine'], familles: ['viandes', 'poissons-fruits-de-mer'], tags: ['viande', 'poisson'] },
+  'Végétalien': { roots: ['viande', 'poisson', 'fruit_de_mer', 'gelatine', 'lait', 'oeuf', 'miel'], familles: ['viandes', 'poissons-fruits-de-mer', 'produits-laitiers-oeufs'], allergens: ['lait', 'oeufs', 'poissons', 'crustaces', 'mollusques'], tags: ['viande', 'poisson', 'animal'] },
+  'Sans viande': { roots: ['viande', 'gelatine'], familles: ['viandes'], tags: ['viande'] },
+  'Sans porc': { roots: ['porc', 'gelatine'], tags: ['porc'] },
+  'Sans alcool': { roots: ['alcool'], tags: ['alcool'] },
+  'Sans gluten': { allergens: ['gluten'] },
+  'Sans lait': { allergens: ['lait'] },
+};
+
+/** Un aliment interdit en texte libre vise un nom exact, ou un nom qui le précise (« coriandre fraîche »),
+ *  mais pas un autre aliment qui commence pareil (« pomme » ≠ « pomme de terre »). */
+function namesMatch(names, forbidden) {
+  const f = norm(forbidden);
+  return names.some(n => {
+    const x = norm(n);
+    if (x === f || x === `${f}s`) return true;
+    if (!x.startsWith(`${f} `)) return false;
+    return !/^(de|d'|du|des|a|au|aux)\b/.test(x.slice(f.length + 1));
+  });
+}
+
+/** Ce qui, dans un ingrédient, heurte le profil. */
 function hits(item, profile) {
   const out = [];
-  const allergens = [...(item.allergens || []), ...(item.food ? FOOD_ALLERGENS[item.food] || [] : [])];
-  const tags = [...(item.tags || []), ...(item.food ? GROUP_TAGS[FOOD[item.food]?.group] || [] : [])];
-  for (const a of allergens) if (profile.allergens.includes(a)) out.push({ kind: 'Allergie', label: a });
+  const ids = item.food ? expand(item.food) : new Set();
+  const allergens = new Set([...(item.food ? allergensOf(item.food) : []), ...(item.allergens || []).map(a => ALLERGEN_CODE[a] || a)]);
+  const familles = new Set([...ids].map(x => FOOD[x]?.famille).filter(Boolean));
+  const tags = item.tags || [];
+  for (const a of profile.allergens) if (allergens.has(ALLERGEN_CODE[a])) out.push({ kind: 'Allergie', label: a });
   for (const r of profile.regimes) {
     const rule = RULES[r];
-    if ((rule.tags || []).some(t => tags.includes(t)) || (rule.allergens || []).some(a => allergens.includes(a))) out.push({ kind: 'Régime', label: r });
+    if (!rule) continue;
+    const bad = (rule.roots || []).some(x => ids.has(x))
+      || (rule.familles || []).some(x => familles.has(x))
+      || (rule.allergens || []).some(x => allergens.has(x))
+      || (rule.tags || []).some(x => tags.includes(x));
+    if (bad) out.push({ kind: 'Régime', label: r });
   }
-  const name = norm(item.name);
-  for (const f of profile.forbidden) if (f && name.includes(norm(f))) out.push({ kind: 'Interdit', label: f });
+  const names = [item.name, ...(item.food ? namesOf(item.food) : [])].filter(Boolean);
+  for (const f of profile.forbidden) if (f && namesMatch(names, f)) out.push({ kind: 'Interdit', label: f });
   return out;
 }
 
@@ -55,15 +77,28 @@ export function checkRecipe(recipe, profile) {
     for (const c of ing.contains || []) for (const h of hits(c, profile)) reasons.push({ ...h, where: `${ing.name} (contient ${c.name})` });
     if (ing.unknown && !unknown) unknown = ing.name;
   }
-  return { safe: reasons.length === 0, reasons, unverifiable: reasons.length === 0 && !!unknown, unknown, composed: recipe.ingredients.filter(i => i.contains) };
+  return { safe: reasons.length === 0, reasons, unverifiable: reasons.length === 0 && !!unknown, unknown, composed: recipe.ingredients.filter(i => i.contains || (i.food && FOOD[i.food]?.composants)) };
 }
 
 export function foodAllowed(food, profile) {
-  return hits({ name: food.name, food: food.id }, profile).length === 0;
+  return hits({ name: food.nom, food: food.id }, profile).length === 0;
 }
 
 /* ---------- Goûts ---------- */
 const ingredientFoods = r => r.ingredients.flatMap(i => [i.food, ...(i.contains || []).map(c => c.food)]).filter(Boolean);
+
+let siblingsIndex = null;
+let siblingsFor = null;
+/** Aliments frères : même parent dans la taxonomie. */
+function siblings(id) {
+  if (siblingsFor !== FOODS) {
+    siblingsIndex = new Map();
+    for (const f of FOODS) if (f.parent) (siblingsIndex.get(f.parent) || siblingsIndex.set(f.parent, []).get(f.parent)).push(f);
+    siblingsFor = FOODS;
+  }
+  const p = FOOD[id]?.parent;
+  return p ? siblingsIndex.get(p) || [] : [];
+}
 
 /** Score de −100 à +100 et son détail. */
 export function foodScore(id, answers, opinions) {
@@ -74,11 +109,10 @@ export function foodScore(id, answers, opinions) {
     if (!r.main.includes(id) || (opinions[r.id] !== 'like' && opinions[r.id] !== 'dislike')) continue;
     dishes.push({ name: r.name, delta: opinions[r.id] === 'like' ? 8 : -8 });
   }
-  const food = FOOD[id];
-  const peers = FOODS.filter(f => f.group === food.group && f.id !== id && (answers[f.id] === 'like' || answers[f.id] === 'dislike'));
+  const peers = siblings(id).filter(f => f.id !== id && (answers[f.id] === 'like' || answers[f.id] === 'dislike'));
   const group = peers.length ? Math.round((peers.reduce((s, f) => s + (answers[f.id] === 'like' ? 1 : -1), 0) / peers.length) * 15) : 0;
   const total = Math.max(-100, Math.min(100, direct + dishes.reduce((s, d) => s + d.delta, 0) + group));
-  return { total, direct, dishes, group, likedPeers: peers.filter(f => answers[f.id] === 'like').map(f => f.name) };
+  return { total, direct, dishes, group, likedPeers: peers.filter(f => answers[f.id] === 'like').map(f => f.nom), parent: FOOD[FOOD[id]?.parent]?.nom };
 }
 
 export function recipeMatch(recipe, answers, opinions) {
@@ -88,8 +122,9 @@ export function recipeMatch(recipe, answers, opinions) {
   return Math.max(0, Math.min(100, Math.round(50 + avg * 0.6 + bonus)));
 }
 
-export const dislikedIn = (recipe, answers) => [...new Set(ingredientFoods(recipe).filter(f => answers[f] === 'dislike'))].map(f => FOOD[f].name);
-export const unknownIn = (recipe, answers) => [...new Set(recipe.main.filter(f => !answers[f]))].map(f => FOOD[f].name);
+/** Aliments « je n'aime pas » présents, y compris cachés dans un ingrédient composé (sauce tomate → tomate). */
+export const dislikedIn = (recipe, answers) => [...new Set(ingredientFoods(recipe).flatMap(f => [...expand(f)]).filter(f => answers[f] === 'dislike'))].map(f => FOOD[f].nom);
+export const unknownIn = (recipe, answers) => [...new Set(recipe.main.filter(f => !answers[f]))].map(f => FOOD[f].nom);
 export const allLiked = (recipe, answers) => recipe.main.every(f => answers[f] === 'like');
 
 /** Recettes visibles : sûres, sans aliment « je n'aime pas ». */
@@ -121,9 +156,8 @@ export function discoveries(state) {
 export function reasonFor(d) {
   if (d.score.likedPeers.length) return `Même famille que ${listFr(d.score.likedPeers.slice(0, 2).map(n => n.toLowerCase()))}, que vous aimez.`;
   if (d.score.dishes.length) return `Dans ${d.score.dishes.length} plat${d.score.dishes.length > 1 ? 's' : ''} que vous aimez.`;
-  return `Proche de vos goûts (${GROUPS[d.food.group].label.toLowerCase()}).`;
+  return `Proche de vos goûts (${(FAMILLES[d.food.famille]?.label || 'aliments').toLowerCase()}).`;
 }
-export const listFr = a => (a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} et ${a[a.length - 1]}`);
 
 /* ---------- Nutrition ---------- */
 export const NUTRIENTS = [
@@ -152,14 +186,21 @@ export function needs(profile) {
   const p = profileComplete(profile) ? profile : { ...profile, age: 30, weight: 65, height: 168 };
   const k = ACTIVITIES.find(a => a.id === p.activity)?.k ?? 1.55;
   const kcal = Math.round(bmr(p) * k);
-  return [kcal, Math.round(0.83 * p.weight), Math.round((kcal * 0.5) / 4), Math.round((kcal * 0.35) / 9), 30, p.sex === 'F' ? 11 : 11, 950, p.sex === 'F' ? 300 : 380, 110, 15, 4];
+  return [kcal, Math.round(0.83 * p.weight), Math.round((kcal * 0.5) / 4), Math.round((kcal * 0.35) / 9), 30, 11, 950, p.sex === 'F' ? 300 : 380, 110, 15, 4];
 }
 export const level = pct => (pct < 70 ? 'bad' : pct < 90 ? 'warn' : 'ok');
 
-export function entryVector(e, foods = FOOD, recipes) {
-  if (e.kind === 'food') return (foods[e.ref].n || []).map(v => (v * e.qty) / 100);
+/** Aliment du journal : code CIQUAL (ou, pour d'anciennes entrées, identifiant du référentiel). */
+export const journalFood = ref => CIQUAL[ref] || (FOOD[ref]?.n ? { code: ref, nom: FOOD[ref].nom, groupe: '', n: FOOD[ref].n } : null);
+
+/** Apports d'une entrée du journal. Une valeur non mesurée dans CIQUAL compte pour zéro. */
+export function entryVector(e, _foods, recipes) {
+  if (e.kind === 'food') {
+    const f = journalFood(e.ref);
+    return f ? f.n.map(v => ((v || 0) * e.qty) / 100) : new Array(11).fill(0);
+  }
   const r = recipes[e.ref];
-  return r.n.map(v => v * e.qty);
+  return r ? r.n.map(v => v * e.qty) : new Array(11).fill(0);
 }
 export const sumVectors = vs => vs.reduce((acc, v) => acc.map((x, i) => x + (v[i] || 0)), new Array(11).fill(0));
 
@@ -183,6 +224,7 @@ export function buildShopping(shopping, recipes) {
   };
   for (const { id, portions } of shopping.recipes) {
     const r = recipes[id];
+    if (!r) continue;
     for (const i of r.ingredients) add(i.name, (i.qty * portions) / r.portions, i.unit, i.aisle, r.name);
   }
   for (const m of shopping.manual) add(m.name, m.qty, m.unit, m.aisle, m.base ? 'Toujours acheter' : 'Ajout manuel');
