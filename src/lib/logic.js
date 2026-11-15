@@ -141,7 +141,11 @@ export const ACTIVITIES = [
 export function bmr(p) {
   return Math.round(10 * p.weight + 6.25 * p.height - 5 * p.age + (p.sex === 'F' ? -161 : 5));
 }
-export const profileComplete = p => [p.age, p.weight, p.height].every(v => typeof v === 'number' && v > 0);
+// Mêmes bornes que les contraintes de la table profiles
+export const RANGES = { age: [10, 120], weight: [20, 400], height: [80, 250] };
+export const outOfRange = (field, v) => v !== '' && v !== null && v !== undefined && (Number.isNaN(Number(v)) || v < RANGES[field][0] || v > RANGES[field][1]);
+export const profileValid = p => Object.keys(RANGES).every(f => !outOfRange(f, p[f]));
+export const profileComplete = p => profileValid(p) && [p.age, p.weight, p.height].every(v => typeof v === 'number' && v > 0);
 
 /** Besoins quotidiens. Profil incomplet : valeurs d'un adulte type, en attendant. */
 export function needs(profile) {

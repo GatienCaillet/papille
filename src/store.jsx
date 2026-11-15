@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { INITIAL_ANSWERS } from './data/foods.js';
 import { INITIAL_OPINIONS } from './data/recipes.js';
-import { addDays, dayKey, norm, today } from './lib/logic.js';
+import { addDays, dayKey, norm, profileValid, today } from './lib/logic.js';
 import { frError, supabase } from './lib/supabase.js';
 import { cloud, loadUserData } from './lib/cloud.js';
 
@@ -151,7 +151,10 @@ export function StoreProvider({ children }) {
     };
     const saveProfileSoon = () => {
       clearTimeout(profileTimer.current);
-      profileTimer.current = setTimeout(() => sync(uid => cloud.saveProfile(uid, ref.current.profile)), 500);
+      profileTimer.current = setTimeout(() => {
+        // Valeur en cours de saisie (« 17 » pour 177 cm) : on attend qu'elle soit plausible
+        if (profileValid(ref.current.profile)) sync(uid => cloud.saveProfile(uid, ref.current.profile));
+      }, 700);
     };
 
     return {

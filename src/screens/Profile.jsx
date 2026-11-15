@@ -2,18 +2,21 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useStore } from '../store.jsx';
-import { ACTIVITIES, ALLERGENS, bmr, catalog, fmt, needs, NUTRIENTS, REGIMES } from '../lib/logic.js';
+import { ACTIVITIES, ALLERGENS, bmr, catalog, fmt, needs, NUTRIENTS, outOfRange, profileComplete, RANGES, REGIMES } from '../lib/logic.js';
 import { Chip, PageHeader, Segmented } from '../components/ui.jsx';
 
-function Num({ label, value, unit, onChange, min, max }) {
+function Num({ label, field, value, unit, onChange }) {
+  const [min, max] = RANGES[field];
+  const bad = outOfRange(field, value);
   return (
     <label className="field">
       <span>{label}</span>
       <span className="input-wrap">
-        <input className="input num" style={{ paddingLeft: 14 }} type="number" inputMode="numeric" min={min} max={max} value={value}
-          onChange={e => onChange(e.target.value === '' ? '' : Number(e.target.value))} />
+        <input className={`input num ${bad ? 'is-bad' : ''}`} style={{ paddingLeft: 14 }} type="number" inputMode="numeric" min={min} max={max} value={value}
+          aria-invalid={bad} onChange={e => onChange(e.target.value === '' ? '' : Number(e.target.value))} />
         <span className="suffix">{unit}</span>
       </span>
+      {bad && <em className="field-hint">Entre {min} et {max} {unit}</em>}
     </label>
   );
 }
@@ -24,7 +27,7 @@ export default function Profile() {
   const p = state.profile;
   const nav = useNavigate();
   const [forb, setForb] = useState('');
-  const ok = [p.age, p.weight, p.height].every(v => typeof v === 'number' && v > 0);
+  const ok = profileComplete(p);
   const ref = ok ? needs(p) : null;
   const act = ACTIVITIES.find(a => a.id === p.activity);
   const { excluded } = catalog(state);
@@ -82,10 +85,10 @@ export default function Profile() {
           <section className="card card-pad stack" style={{ gap: 14 }}>
             <h2>Mon corps</h2>
             <div className="body-grid">
-              <Num label="Âge" value={p.age} unit="ans" min={14} max={110} onChange={v => setProfile({ age: v })} />
+              <Num label="Âge" field="age" value={p.age} unit="ans" onChange={v => setProfile({ age: v })} />
               <div className="field"><span>Sexe</span><Segmented block label="Sexe" options={[['F', 'Femme'], ['H', 'Homme']]} value={p.sex} onChange={v => setProfile({ sex: v })} /></div>
-              <Num label="Poids" value={p.weight} unit="kg" min={30} max={250} onChange={v => setProfile({ weight: v })} />
-              <Num label="Taille" value={p.height} unit="cm" min={120} max={230} onChange={v => setProfile({ height: v })} />
+              <Num label="Poids" field="weight" value={p.weight} unit="kg" onChange={v => setProfile({ weight: v })} />
+              <Num label="Taille" field="height" value={p.height} unit="cm" onChange={v => setProfile({ height: v })} />
             </div>
             <fieldset className="activity">
               <legend>Activité</legend>
