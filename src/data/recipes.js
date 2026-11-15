@@ -45,5 +45,13 @@ export async function loadRecipes() {
   ORIGINS = Object.keys(counts).filter(o => o !== 'Non précisée').sort((a, b) => counts[b] - counts[a]);
 }
 
+/** Ajoute les recettes importées par l'utilisateur au catalogue (remplace les précédentes). */
+let catalogOnly = null;
+export function setImported(list = []) {
+  if (!catalogOnly) catalogOnly = RECIPES;
+  RECIPES = [...list, ...catalogOnly];
+  RECIPE = Object.fromEntries(RECIPES.map(r => [r.id, r]));
+}
+
 // Avis de départ du profil de démonstration
 export const INITIAL_OPINIONS = { 'dahl-de-lentilles-corail': 'like', ratatouille: 'like', 'soupe-au-potiron': 'like' };

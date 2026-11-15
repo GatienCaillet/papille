@@ -15,6 +15,7 @@ export default function Recipes() {
   const [type, setType] = useState('');
   const [origin, setOrigin] = useState('');
   const [onlyLiked, setOnlyLiked] = useState(false);
+  const [mine, setMine] = useState(false);
   const [showUnv, setShowUnv] = useState(false);
   const [why, setWhy] = useState(false);
   const [limit, setLimit] = useState(24);
@@ -27,12 +28,13 @@ export default function Recipes() {
     if (type && r.type !== type) return false;
     if (origin && r.origin !== origin) return false;
     if (onlyLiked && !allLiked(r, state.answers)) return false;
+    if (mine && !r.imported) return false;
     return true;
   };
   const rows = cat.visible.filter(pass);
   const unv = showUnv ? cat.unverifiable.filter(pass) : [];
   const hidden = cat.excluded.length + cat.withDisliked.length;
-  const filtersOn = q || time || type || origin || onlyLiked;
+  const filtersOn = q || time || type || origin || onlyLiked || mine;
 
   const add = <Link to="/recettes/ajouter" className="btn btn-primary"><Plus size={17} /> Ajouter une recette</Link>;
 
@@ -57,6 +59,7 @@ export default function Recipes() {
           <div className="row row-wrap" style={{ gap: 6 }}>
             <span className="small muted">Moins de</span>
             {TIMES.map(([v, l]) => <Chip small key={v} on={time === v} onClick={() => setTime(time === v ? null : v)}>{l}</Chip>)}
+            {state.imported.length > 0 && <Chip small on={mine} onClick={() => setMine(m => !m)}>Mes recettes ({state.imported.length})</Chip>}
           </div>
           <div className="row row-wrap" style={{ gap: 18 }}>
             <Switch checked={onlyLiked} onChange={setOnlyLiked}>Que des aliments que j’aime</Switch>
@@ -69,7 +72,7 @@ export default function Recipes() {
         <div className="card empty">
           <SearchX size={30} />
           <b>Aucune recette ne passe ces filtres.</b>
-          {filtersOn && <button type="button" className="btn btn-sm" onClick={() => { setQ(''); setTime(null); setType(''); setOrigin(''); setOnlyLiked(false); }}>Effacer les filtres</button>}
+          {filtersOn && <button type="button" className="btn btn-sm" onClick={() => { setQ(''); setTime(null); setType(''); setOrigin(''); setOnlyLiked(false); setMine(false); }}>Effacer les filtres</button>}
         </div>
       ) : (
         <>

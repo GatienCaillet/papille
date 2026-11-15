@@ -5,15 +5,16 @@ const num = v => (v === null || v === undefined ? '' : Number(v));
 /** Charge toutes les données d'un utilisateur et les met au format du store. */
 export async function loadUserData(userId) {
   const q = t => supabase.from(t).select('*').eq('user_id', userId);
-  const [profile, answers, opinions, journal, shopRecipes, shopItems, shopState, always] = await Promise.all([
+  const [profile, answers, opinions, journal, shopRecipes, shopItems, shopState, always, imported] = await Promise.all([
     supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
     q('food_answers'), q('recipe_opinions'),
     q('journal_entries').order('created_at'),
     q('shopping_recipes'), q('shopping_items').order('created_at'),
     supabase.from('shopping_state').select('*').eq('user_id', userId).maybeSingle(),
     q('always_buy').order('created_at'),
+    q('user_recipes').order('created_at', { ascending: false }),
   ]);
-  const failed = [profile, answers, opinions, journal, shopRecipes, shopItems, shopState, always].find(r => r.error);
+  const failed = [profile, answers, opinions, journal, shopRecipes, shopItems, shopState, always, imported].find(r => r.error);
   if (failed) throw failed.error;
 
   const p = profile.data || {};
@@ -35,6 +36,7 @@ export async function loadUserData(userId) {
       removed: shopState.data?.removed || [],
     },
     always: always.data.map(r => ({ id: r.id, name: r.name, qty: Number(r.qty), unit: r.unit, aisle: r.aisle })),
+    imported: imported.data.map(r => ({ ...r.recipe, id: r.id })),
   };
 }
 
@@ -63,4 +65,6 @@ export const cloud = {
   saveShoppingState: (uid, s) => check(supabase.from('shopping_state').upsert({ user_id: uid, checked: s.checked, removed: s.removed || [] })),
   addAlways: (uid, a) => check(supabase.from('always_buy').insert({ id: a.id, user_id: uid, name: a.name, qty: a.qty, unit: a.unit, aisle: a.aisle })),
   removeAlways: (uid, id) => check(supabase.from('always_buy').delete().eq('user_id', uid).eq('id', id)),
+  addRecipe: (uid, r) => check(supabase.from('user_recipes').insert({ id: r.id, user_id: uid, source_url: r.source?.url || null, recipe: r })),
+  removeRecipe: (uid, id) => check(supabase.from('user_recipes').delete().eq('user_id', uid).eq('id', id)),
 };

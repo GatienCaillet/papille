@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Clock, Compass, ExternalLink, Flame, FlaskConical, Heart, NotebookPen, ShieldCheck, ShoppingBasket, Sparkles, ThumbsDown, TriangleAlert } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Clock, Compass, ExternalLink, Flame, FlaskConical, Heart, NotebookPen, ShieldCheck, ShoppingBasket, Sparkles, ThumbsDown, Trash2, TriangleAlert } from 'lucide-react';
 import { useStore } from '../store.jsx';
 import { RECIPE } from '../data/recipes.js';
 import { FOOD } from '../data/foods.js';
@@ -25,7 +25,8 @@ const contents = ing => {
 
 export default function RecipeDetail() {
   const { id } = useParams();
-  const { state, opinion, addEntry, addRecipeToShopping, notify } = useStore();
+  const { state, opinion, addEntry, addRecipeToShopping, removeImported, notify } = useStore();
+  const nav = useNavigate();
   const r = RECIPE[id];
   const [portions, setPortions] = useState(r?.portions ?? 2);
   if (!r) return <div className="card empty"><b>Cette recette n’existe pas.</b><Link className="btn btn-sm" to="/recettes">Retour aux recettes</Link></div>;
@@ -88,11 +89,14 @@ export default function RecipeDetail() {
             <span className="badge badge-brand">{r.type}</span>
             {r.origin !== 'Non précisée' && <span className="badge">{r.origin}</span>}
             {r.generated && <span className="badge badge-warn"><FlaskConical size={12} /> pas encore testée</span>}
+            {r.imported && <span className="badge">{r.imported === 'manual' ? 'Saisie par vous' : 'Importée'}</span>}
           </div>
           <h1 className="rd-title">{r.name}</h1>
-          <a className="small muted row" style={{ gap: 4 }} href={r.source.url} target="_blank" rel="noreferrer">
-            {wiki ? 'Livre de cuisine, Wikibooks' : 'Recette rédigée pour Bouchée'} <ExternalLink size={13} />
-          </a>
+          {r.source.url ? (
+            <a className="small muted row" style={{ gap: 4 }} href={r.source.url} target="_blank" rel="noreferrer">
+              {wiki ? 'Livre de cuisine, Wikibooks' : r.imported ? r.source.authors : 'Recette rédigée pour Bouchée'} <ExternalLink size={13} />
+            </a>
+          ) : <span className="small muted">Recette personnelle</span>}
           <div className="rd-stats">
             <div><Clock size={17} /><b className="num">{r.time ? `${r.time} min` : '—'}</b><span>au total</span></div>
             <div><Flame size={17} /><b className="num">{r.nutritionUnsure ? '—' : `${Math.round(r.n[0])} kcal`}</b><span>par portion (estimé)</span></div>
@@ -164,14 +168,23 @@ export default function RecipeDetail() {
         </ol>
       </section>
 
+      {r.imported && (
+        <button type="button" className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }}
+          onClick={() => { removeImported(r.id); notify(`« ${r.name} » retirée de vos recettes.`); nav('/recettes'); }}>
+          <Trash2 size={15} /> Retirer de mes recettes
+        </button>
+      )}
+
       <section className="credits xs muted">
         <p>
-          <b>Source :</b> <a href={r.source.url} target="_blank" rel="noreferrer">{r.source.title}</a>
+          <b>Source :</b> {r.source.url ? <a href={r.source.url} target="_blank" rel="noreferrer">{r.source.title}</a> : r.source.title}
           {r.source.history ? <> · <a href={r.source.history} target="_blank" rel="noreferrer">auteurs ({r.source.authors})</a></> : r.source.authors ? ` · ${r.source.authors}` : ''}
           {' '}· licence {r.source.licence}.
           {r.source.changes ? ` ${r.source.changes}` : ''}
         </p>
-        {r.photo && <p><b>Photo :</b> <a href={r.photo.page} target="_blank" rel="noreferrer">{r.photo.a}</a>, {r.photo.l}, via Wikimedia Commons.</p>}
+        {r.photo && (r.imported
+          ? <p><b>Photo :</b> {r.photo.l}, affichée depuis la page d’origine.</p>
+          : <p><b>Photo :</b> <a href={r.photo.page} target="_blank" rel="noreferrer">{r.photo.a}</a>, {r.photo.l}, via Wikimedia Commons.</p>)}
       </section>
     </>
   );

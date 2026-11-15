@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { INITIAL_ANSWERS } from './data/foods.js';
-import { INITIAL_OPINIONS } from './data/recipes.js';
+import { INITIAL_OPINIONS, setImported } from './data/recipes.js';
 import { addDays, dayKey, norm, profileValid, today } from './lib/logic.js';
 import { frError, supabase } from './lib/supabase.js';
 import { cloud, loadUserData } from './lib/cloud.js';
@@ -18,6 +18,7 @@ const EMPTY = {
   journal: {},
   shopping: { recipes: [], manual: [], checked: [], removed: [] },
   always: [],
+  imported: [],
 };
 
 const F = (ref, qty) => ({ kind: 'food', ref, qty });
@@ -71,7 +72,11 @@ function loadDemo() {
 const Ctx = createContext(null);
 
 export function StoreProvider({ children }) {
-  const [state, setState] = useState(() => loadDemo() || { ...EMPTY, mode: null, user: null });
+  const [state, setState] = useState(() => {
+    const s = loadDemo() || { ...EMPTY, mode: null, user: null };
+    setImported(s.imported || []);
+    return s;
+  });
   const [ready, setReady] = useState(false);
   const [toast, setToast] = useState(null);
   const ref = useRef(state);
@@ -79,6 +84,8 @@ export function StoreProvider({ children }) {
 
   const commit = useCallback(patch => {
     const next = { ...ref.current, ...(typeof patch === 'function' ? patch(ref.current) : patch) };
+    // Les recettes importées rejoignent le catalogue avant le rendu
+    if (next.imported !== ref.current.imported) setImported(next.imported || []);
     ref.current = next;
     setState(next);
     return next;
@@ -259,6 +266,19 @@ export function StoreProvider({ children }) {
       removeAlwaysItem: id => {
         commit(s => ({ always: s.always.filter(a => a.id !== id) }));
         sync(uid => cloud.removeAlways(uid, id));
+      },
+
+      /* Recettes importées */
+      importRecipe: recipe => {
+        const s = ref.current;
+        if (recipe.source?.url && s.imported.some(r => r.source?.url === recipe.source.url)) return false;
+        commit({ imported: [recipe, ...s.imported] });
+        sync(uid => cloud.addRecipe(uid, recipe));
+        return true;
+      },
+      removeImported: id => {
+        commit(s => ({ imported: s.imported.filter(r => r.id !== id) }));
+        sync(uid => cloud.removeRecipe(uid, id));
       },
     };
   }, [commit, notify, sync]);

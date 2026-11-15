@@ -118,7 +118,7 @@ export function RecipeCard({ row, unverified }) {
         <span className="badge badge-on-photo">{r.type}</span>
       </div>
       <div className="rcard-body">
-        <span className="xs muted">{r.origin === 'Non précisée' ? r.type : r.origin}{r.generated ? ' · non testée' : ''}</span>
+        <span className="xs muted">{r.origin === 'Non précisée' ? r.type : r.origin}{r.generated ? ' · non testée' : ''}{r.imported ? ' · importée' : ''}</span>
         <span className="h3">{r.name}</span>
         <span className="rcard-meta">
           {r.time && <span><Clock size={14} /> {r.time} min</span>}

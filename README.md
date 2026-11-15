@@ -16,7 +16,8 @@ Proposition A « Tableau de bord » : connexion, profil, swipe, mes goûts, rece
 - **Déjà réel** : vérification de sécurité (allergènes, régimes, interdits, ingrédients composés comme le pesto ou le bouillon), recettes non vérifiables masquées, scores des aliments, Mifflin-St Jeor, apports du jour et sur 7 jours, fusion des courses.
 - **Aliments réels** : 1 003 ingrédients du référentiel Bouchée (allergènes hérités, composants cachés, taxonomie) avec leurs nutriments CIQUAL 2025 ; base du swipe = les 200 ingrédients les plus utilisés dans les 1 010 recettes du catalogue ; journal sur toute la table CIQUAL (3 484 aliments).
 - **Recettes réelles** : les 1 010 recettes du catalogue Bouchée, vérifiées une à une contre le profil (ingrédients composés et lignes vagues compris : une ligne « huile » sans précision rend la recette « impossible à vérifier » si une variante heurte le profil). Type de plat, origine et nutriments par portion sont estimés par le script de conversion ; 548 recettes rédigées pour Bouchée sont signalées « pas encore testées ».
-- **Encore simulé** : recherche web (résultats d’exemple) et import de recettes.
+- **Recherche web et import** : Edge Function Supabase `recettes-web` (code dans `supabase/functions/`). La recherche interroge les moteurs internes de Marmiton et 750g (les moteurs généralistes comme DuckDuckGo et Bing bloquent les serveurs) ; les mots exclus du profil retirent les titres concernés, puis chaque recette trouvée est lue (données schema.org) et vérifiée ingrédient par ingrédient. « Coller un lien » lit aussi Cuisine AZ, Journal des Femmes et Ricardo. Les recettes importées sont enregistrées dans la table `user_recipes` (copie privée pour usage personnel, lien vers la source conservé).
+- **À savoir avant une ouverture au public** : relire les conditions d’utilisation des sites lus par la fonction.
 
 ## Données d’aliments et de recettes
 
