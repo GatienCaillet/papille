@@ -100,7 +100,7 @@ export default function RecipeDetail() {
             <a className="small muted row" style={{ gap: 4 }} href={r.source.url} target="_blank" rel="noreferrer">
               {wiki ? 'Livre de cuisine, Wikibooks' : r.imported ? r.source.authors : 'Recette rédigée pour Bouchée'} <ExternalLink size={13} />
             </a>
-          ) : <span className="small muted">Recette personnelle</span>}
+          ) : <span className="small muted">{r.source.authors === 'Papille' ? 'Recette de base rédigée pour Papille' : 'Recette personnelle'}</span>}
           <div className="rd-stats">
             <div><Clock size={17} /><b className="num">{r.time ? `${r.time} min` : '—'}</b><span>au total</span></div>
             <div><Flame size={17} /><b className="num">{r.nutritionUnsure ? '—' : `${Math.round(r.n[0])} kcal`}</b><span>par portion (estimé)</span></div>
@@ -189,7 +189,7 @@ export default function RecipeDetail() {
         {img?.credit && (
           <p><b>{img.kind === 'ingredient' ? 'Illustration' : 'Photo'} :</b> <a href={img.credit.page} target="_blank" rel="noreferrer">{img.credit.author}</a>, {img.credit.licence}, via Wikimedia Commons.</p>
         )}
-        {r.photo && (r.imported
+        {img?.kind === 'own' && (r.imported
           ? <p><b>Photo :</b> {r.photo.l}, affichée depuis la page d’origine.</p>
           : <p><b>Photo :</b> <a href={r.photo.page} target="_blank" rel="noreferrer">{r.photo.a}</a>, {r.photo.l}, via Wikimedia Commons.</p>)}
       </section>

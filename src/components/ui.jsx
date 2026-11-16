@@ -107,12 +107,14 @@ export function Bar({ pct, tone }) {
   return <span className={`bar c-${tone}`} role="presentation"><i style={{ width: `${Math.min(100, pct)}%` }} /></span>;
 }
 
-/** D'où vient l'illustration d'une recette : sa photo, l'article Wikipédia du plat, ou son ingrédient principal. */
+/** D'où vient l'illustration d'une recette : la photo du plat choisie dans Commons (scripts/build-recipe-photos.mjs),
+ *  sinon sa photo d'origine, sinon son ingrédient principal. */
 export function recipeImage(r) {
   if (!r) return null;
+  const dish = !r.imported && IMAGES.recipes[r.id];
+  // Vignette : l'adresse directe (upload.wikimedia.org, 500 px) évite une redirection par image dans les listes
+  if (dish) return { kind: 'dish', src: commonsAt(dish, 1024), thumb: dish.thumb?.startsWith('https://upload.') ? dish.thumb : commonsAt(dish, 640), credit: dish };
   if (r.photo) return { kind: 'own', src: r.photo.full, thumb: r.photo.full.replace(/width=\d+/, 'width=640') };
-  const dish = IMAGES.recipes[r.id];
-  if (dish) return { kind: 'dish', src: commonsAt(dish, 1024), thumb: commonsAt(dish, 640), credit: dish };
   for (const id of r.main || []) {
     const img = imageOf(id);
     if (img) return { kind: 'ingredient', src: commonsAt(img, 1024), thumb: commonsAt(img, 640), credit: img, food: FOOD[img.of] };
@@ -123,7 +125,9 @@ export function recipeImage(r) {
 /** Illustration d'une recette ; sans aucune image, un aplat teinté de la famille de l'ingrédient principal. */
 export function RecipeVisual({ r, full, eager }) {
   const img = recipeImage(r);
-  if (img) return <img src={full ? img.src : img.thumb} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" draggable="false" />;
+  // La grande image passe par commons.wikimedia.org (redirection) : si elle échoue, on garde la vignette directe
+  const fallback = e => { if (img.thumb && e.currentTarget.src !== img.thumb) e.currentTarget.src = img.thumb; };
+  if (img) return <img src={full ? img.src : img.thumb} onError={fallback} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" draggable="false" />;
   const f = FOOD[r?.main?.[0]];
   const t = FAMILLES[f?.famille]?.tint || 'sauce';
   const Icon = Icons[FAMILLES[f?.famille]?.icon] || Soup;
