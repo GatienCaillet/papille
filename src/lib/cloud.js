@@ -1,20 +1,24 @@
 import { supabase } from './supabase.js';
+import { rkey, UNSURE } from './logic.js';
 
+// Note : 0 à 10, ou null en base pour « je ne sais pas encore » (migration 20261116140000_papille_ratings)
+const toScore = v => (v === null || v === undefined ? UNSURE : Number(v));
+const toDb = v => (v === UNSURE ? null : v);
 const num = v => (v === null || v === undefined ? '' : Number(v));
 
 /** Charge toutes les données d'un utilisateur et les met au format du store. */
 export async function loadUserData(userId) {
   const q = t => supabase.from(t).select('*').eq('user_id', userId);
-  const [profile, answers, opinions, journal, shopRecipes, shopItems, shopState, always, imported] = await Promise.all([
+  const [profile, ratings, opinions, journal, shopRecipes, shopItems, shopState, always, imported] = await Promise.all([
     supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
-    q('food_answers'), q('recipe_opinions'),
+    q('food_ratings'), q('recipe_ratings'),
     q('journal_entries').order('created_at'),
     q('shopping_recipes'), q('shopping_items').order('created_at'),
     supabase.from('shopping_state').select('*').eq('user_id', userId).maybeSingle(),
     q('always_buy').order('created_at'),
     q('user_recipes').order('created_at', { ascending: false }),
   ]);
-  const failed = [profile, answers, opinions, journal, shopRecipes, shopItems, shopState, always, imported].find(r => r.error);
+  const failed = [profile, ratings, opinions, journal, shopRecipes, shopItems, shopState, always, imported].find(r => r.error);
   if (failed) throw failed.error;
 
   const p = profile.data || {};
@@ -26,8 +30,8 @@ export async function loadUserData(userId) {
       allergens: p.allergens || [], regimes: p.regimes || [], forbidden: p.forbidden || [],
       age: num(p.age), sex: p.sex || 'F', weight: num(p.weight), height: num(p.height), activity: p.activity || 'mod',
     },
-    answers: Object.fromEntries(answers.data.map(r => [r.food_id, r.answer])),
-    opinions: Object.fromEntries(opinions.data.map(r => [r.recipe_id, r.opinion])),
+    ratings: Object.fromEntries(ratings.data.map(r => [rkey(r.food_id, r.form || null), toScore(r.score)])),
+    opinions: Object.fromEntries(opinions.data.map(r => [r.recipe_id, toScore(r.score)])),
     journal: byDay,
     shopping: {
       recipes: shopRecipes.data.map(r => ({ id: r.recipe_id, portions: Number(r.portions) })),
@@ -49,12 +53,13 @@ export const cloud = {
     user_id: uid, allergens: p.allergens, regimes: p.regimes, forbidden: p.forbidden,
     age: orNull(p.age), sex: p.sex, weight: orNull(p.weight), height: orNull(p.height), activity: p.activity, updated_at: new Date().toISOString(),
   })),
-  setAnswer: (uid, foodId, value) => check(value
-    ? supabase.from('food_answers').upsert({ user_id: uid, food_id: foodId, answer: value, updated_at: new Date().toISOString() })
-    : supabase.from('food_answers').delete().eq('user_id', uid).eq('food_id', foodId)),
-  setOpinion: (uid, recipeId, value) => check(value
-    ? supabase.from('recipe_opinions').upsert({ user_id: uid, recipe_id: recipeId, opinion: value, updated_at: new Date().toISOString() })
-    : supabase.from('recipe_opinions').delete().eq('user_id', uid).eq('recipe_id', recipeId)),
+  // value null : la note est effacée ; form null : note générale (form = '' en base)
+  setRating: (uid, foodId, form, value) => check(value !== null
+    ? supabase.from('food_ratings').upsert({ user_id: uid, food_id: foodId, form: form || '', score: toDb(value), updated_at: new Date().toISOString() })
+    : supabase.from('food_ratings').delete().eq('user_id', uid).eq('food_id', foodId).eq('form', form || '')),
+  setOpinion: (uid, recipeId, value) => check(value !== null
+    ? supabase.from('recipe_ratings').upsert({ user_id: uid, recipe_id: recipeId, score: toDb(value), updated_at: new Date().toISOString() })
+    : supabase.from('recipe_ratings').delete().eq('user_id', uid).eq('recipe_id', recipeId)),
   addEntry: (uid, day, e) => check(supabase.from('journal_entries').insert({ id: e.id, user_id: uid, day, kind: e.kind, ref: e.ref, qty: e.qty })),
   removeEntry: (uid, id) => check(supabase.from('journal_entries').delete().eq('user_id', uid).eq('id', id)),
   setShoppingRecipe: (uid, recipeId, portions) => check(portions > 0

@@ -27,7 +27,7 @@ export default function Recipes() {
     if (time && (!r.time || r.time > time)) return false;
     if (type && r.type !== type) return false;
     if (origin && r.origin !== origin) return false;
-    if (onlyLiked && !allLiked(r, state.answers)) return false;
+    if (onlyLiked && !allLiked(r, state.ratings)) return false;
     if (mine && !r.imported) return false;
     return true;
   };

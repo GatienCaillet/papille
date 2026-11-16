@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { INITIAL_ANSWERS } from './data/foods.js';
+import { INITIAL_RATINGS } from './data/foods.js';
 import { INITIAL_OPINIONS, setImported } from './data/recipes.js';
-import { addDays, dayKey, norm, profileValid, today } from './lib/logic.js';
+import { addDays, dayKey, fromLegacy, migrateRatings, norm, profileValid, rkey, today } from './lib/logic.js';
 import { frError, supabase } from './lib/supabase.js';
 import { cloud, loadUserData } from './lib/cloud.js';
 
@@ -12,8 +12,8 @@ const itemKey = (name, unit) => `${norm(name)}|${unit}`;
 /* ---------- Données ---------- */
 const EMPTY = {
   profile: { allergens: [], regimes: [], forbidden: [], age: '', sex: 'F', weight: '', height: '', activity: 'mod' },
-  answers: {},
-  opinions: {},
+  ratings: {},   // notes des aliments : { gruyere: 7, 'gruyere@fondu': 9, fenouil: 'unsure' }
+  opinions: {},  // notes des plats : { ratatouille: 8 }
   swipeLog: [],
   journal: {},
   shopping: { recipes: [], manual: [], checked: [], removed: [] },
@@ -41,7 +41,7 @@ function demoData() {
   return {
     ...EMPTY,
     profile: { allergens: ['Fruits à coque', 'Sésame'], regimes: ['Sans porc'], forbidden: ['Coriandre', 'Kiwi'], age: 29, sex: 'F', weight: 62, height: 168, activity: 'mod' },
-    answers: { ...INITIAL_ANSWERS },
+    ratings: { ...INITIAL_RATINGS },
     opinions: { ...INITIAL_OPINIONS },
     journal,
     shopping: {
@@ -58,10 +58,21 @@ function demoData() {
   };
 }
 
+/** Données de démo enregistrées par une version précédente : J'aime → 8, J'aime pas → 2,
+ *  Je ne sais pas → « je ne sais pas encore ». Rien n'est perdu, l'historique du swipe compris. */
+export function migrateDemo(data) {
+  const out = { ...data };
+  if (data.answers && !data.ratings) out.ratings = migrateRatings(data.answers);
+  delete out.answers;
+  out.opinions = migrateRatings(data.opinions);
+  out.swipeLog = (data.swipeLog || []).map(l => ({ ...l, value: fromLegacy(l.value), prev: fromLegacy(l.prev) }));
+  return out;
+}
+
 function loadDemo() {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...EMPTY, ...JSON.parse(raw), mode: 'demo', user: null };
+    if (raw) return { ...EMPTY, ...migrateDemo(JSON.parse(raw)), mode: 'demo', user: null };
   } catch (e) { /* stockage indisponible */ }
   // En développement, ?auto ouvre directement la démo (captures d'écran)
   if (import.meta.env.DEV && location.search.includes('auto')) return { ...demoData(), mode: 'demo', user: null };
@@ -148,13 +159,16 @@ export function StoreProvider({ children }) {
 
   const actions = useMemo(() => {
     const saveShoppingState = () => sync(uid => cloud.saveShoppingState(uid, ref.current.shopping));
-    const setFoodAnswer = (foodId, value) => {
-      commit(s => { const answers = { ...s.answers }; if (value) answers[foodId] = value; else delete answers[foodId]; return { answers }; });
-      sync(uid => cloud.setAnswer(uid, foodId, value));
+    const has = v => v !== undefined && v !== null;
+    // value : 0 à 10, 'unsure', ou null pour effacer la note. form : null = toutes les formes.
+    const setFoodRating = (foodId, form, value) => {
+      const key = rkey(foodId, form);
+      commit(s => { const ratings = { ...s.ratings }; if (has(value)) ratings[key] = value; else delete ratings[key]; return { ratings }; });
+      sync(uid => cloud.setRating(uid, foodId, form, has(value) ? value : null));
     };
     const setRecipeOpinion = (recipeId, value) => {
-      commit(s => { const opinions = { ...s.opinions }; if (value) opinions[recipeId] = value; else delete opinions[recipeId]; return { opinions }; });
-      sync(uid => cloud.setOpinion(uid, recipeId, value));
+      commit(s => { const opinions = { ...s.opinions }; if (has(value)) opinions[recipeId] = value; else delete opinions[recipeId]; return { opinions }; });
+      sync(uid => cloud.setOpinion(uid, recipeId, has(value) ? value : null));
     };
     const saveProfileSoon = () => {
       clearTimeout(profileTimer.current);
@@ -187,20 +201,21 @@ export function StoreProvider({ children }) {
       },
 
       /* Goûts */
-      answer: setFoodAnswer,
-      opinion: (recipeId, value) => setRecipeOpinion(recipeId, !value || ref.current.opinions[recipeId] === value ? null : value),
+      rate: setFoodRating,
+      // Toucher la note déjà donnée l'efface
+      opinion: (recipeId, value) => setRecipeOpinion(recipeId, !has(value) || ref.current.opinions[recipeId] === value ? null : value),
       swipe: (card, value) => {
         const s = ref.current;
-        const prev = card.kind === 'food' ? s.answers[card.ref] : s.opinions[card.ref];
+        const prev = card.kind === 'food' ? s.ratings[rkey(card.ref, card.form)] : s.opinions[card.ref];
         commit({ swipeLog: [...s.swipeLog, { card, value, prev }] });
-        if (card.kind === 'food') setFoodAnswer(card.ref, value); else setRecipeOpinion(card.ref, value);
+        if (card.kind === 'food') setFoodRating(card.ref, card.form || null, value); else setRecipeOpinion(card.ref, value);
       },
       undoSwipe: () => {
         const s = ref.current;
         const last = s.swipeLog[s.swipeLog.length - 1];
         if (!last) return;
         commit({ swipeLog: s.swipeLog.slice(0, -1) });
-        if (last.card.kind === 'food') setFoodAnswer(last.card.ref, last.prev || null); else setRecipeOpinion(last.card.ref, last.prev || null);
+        if (last.card.kind === 'food') setFoodRating(last.card.ref, last.card.form || null, has(last.prev) ? last.prev : null); else setRecipeOpinion(last.card.ref, has(last.prev) ? last.prev : null);
       },
 
       /* Journal */

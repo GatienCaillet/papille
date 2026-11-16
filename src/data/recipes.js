@@ -14,6 +14,7 @@ export let RECIPE = {};
 export let TYPES = [];
 export let ORIGINS = [];
 export let LICENCE = '';
+export let FORM_USE = {};
 
 export async function loadRecipes() {
   const res = await fetch(`${BASE}data/recettes.json`);
@@ -31,7 +32,8 @@ export async function loadRecipes() {
     n: r.n,
     nutritionUnsure: !!r.nko,
     coverage: r.cov,
-    ingredients: r.ing.map(i => ({ name: i.t, foods: i.f, food: i.f[0], qty: i.q ?? null, unit: i.u || '', aisle: i.a, optional: !!i.opt, confidence: i.c ?? 1 })),
+    // forms : forme de chaque aliment dans la recette (cru, cuit, fondu…), écrite par scripts/add-forms.mjs
+    ingredients: r.ing.map(i => ({ name: i.t, foods: i.f, food: i.f[0], forms: i.fo || {}, qty: i.q ?? null, unit: i.u || '', aisle: i.a, optional: !!i.opt, confidence: i.c ?? 1 })),
     steps: r.steps,
     source: { title: r.src.t, url: r.src.u, history: r.src.h, authors: r.src.a, licence: r.src.l, changes: r.src.m },
     generated: !!r.gen,
@@ -39,6 +41,13 @@ export async function loadRecipes() {
     discovery: r.disc || null,
   }));
   RECIPE = Object.fromEntries(RECIPES.map(r => [r.id, r]));
+  // Combien de recettes du catalogue utilisent chaque aliment sous chaque forme (« gruyere@fondu » → 10)
+  FORM_USE = {};
+  for (const r of RECIPES) {
+    const seen = new Set();
+    for (const i of r.ingredients) for (const [id, form] of Object.entries(i.forms)) seen.add(`${id}@${form}`);
+    for (const k of seen) FORM_USE[k] = (FORM_USE[k] || 0) + 1;
+  }
   const types = new Set(RECIPES.map(r => r.type));
   TYPES = TYPE_ORDER.filter(t => types.has(t));
   const counts = RECIPES.reduce((m, r) => ({ ...m, [r.origin]: (m[r.origin] || 0) + 1 }), {});
@@ -53,5 +62,5 @@ export function setImported(list = []) {
   RECIPE = Object.fromEntries(RECIPES.map(r => [r.id, r]));
 }
 
-// Avis de départ du profil de démonstration
-export const INITIAL_OPINIONS = { 'dahl-de-lentilles-corail': 'like', ratatouille: 'like', 'soupe-au-potiron': 'like' };
+// Notes de départ (0 à 10) des plats du profil de démonstration
+export const INITIAL_OPINIONS = { 'dahl-de-lentilles-corail': 9, ratatouille: 8, 'soupe-au-potiron': 7 };

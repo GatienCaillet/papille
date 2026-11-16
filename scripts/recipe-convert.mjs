@@ -2,6 +2,24 @@
 // vers le format de public/data/recettes.json : type de plat et origine estimés, nutriments par portion
 // estimés à partir des quantités, ingrédients principaux, rayon de chaque ligne pour les courses.
 // Utilisé par build-recipes.mjs et add-papille-recipes.mjs.
+// Forme de chaque ingrédient (cru, cuit, fondu…) : déduite des étapes par src/lib/forms.js, ou
+// imposée par la recette source (champ `forme` d'une ligne : « fondu », ou { gruyere: 'fondu' }).
+
+import { inferForms, modelForms } from '../src/lib/forms.js';
+
+/** Formes des lignes d'une recette convertie (champ `fo` de chaque ligne), explicites d'abord. */
+export function lineForms(r, FOOD, explicit = []) {
+  const inferred = inferForms({ name: r.name, type: r.type, steps: r.steps, lines: r.ing.map(i => ({ text: i.t, foods: i.f })) }, FOOD);
+  return r.ing.map((l, k) => {
+    const e = explicit[k];
+    const out = { ...inferred[k] };
+    for (const id of l.f) {
+      const want = typeof e === 'string' ? e : e?.[id];
+      if (want && modelForms(id, FOOD).some(x => x.id === want)) out[id] = want;
+    }
+    return Object.keys(out).length ? out : null;
+  });
+}
 
 export function makeConverter(aliments) {
   const FOOD = Object.fromEntries(aliments.map(a => [a.id, a]));
@@ -144,6 +162,7 @@ export function makeConverter(aliments) {
     if (/Bouchée|Papille/.test(r.source.auteurs || '')) recipe.gen = 1; // rédigée pour l'app, pas encore testée en cuisine
     if (r.photo) recipe.photo = { thumb: r.photo.vignette, full: r.photo.image, page: r.photo.page, a: r.photo.auteur, l: r.photo.licence };
     if (r.decouverte) recipe.disc = r.decouverte;
+    lineForms(recipe, FOOD, r.lignes.map(l => l.forme)).forEach((fo, k) => { if (fo) recipe.ing[k].fo = fo; });
     return recipe;
   }
   return { convert, partial: () => partial, FOOD };

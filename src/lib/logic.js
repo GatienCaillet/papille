@@ -1,5 +1,6 @@
 import { ALLERGEN_CODE, CIQUAL, FAMILLES, FOOD, FOODS, allergensOf, descendants, expand, namesOf } from '../data/foods.js';
-import { RECIPE, RECIPES } from '../data/recipes.js';
+import { FORM_USE, RECIPE, RECIPES } from '../data/recipes.js';
+import { formLabel as formLabelOf, inferForms, modelForms } from './forms.js';
 
 /* ---------- Texte ---------- */
 export const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/œ/g, 'oe').replace(/’/g, "'").trim();
@@ -107,9 +108,83 @@ export function foodAllowed(food, profile) {
   return hits({ name: food.nom, food: food.id }, profile).length === 0;
 }
 
-/* ---------- Goûts ---------- */
-const ingredientFoods = r => r.ingredients.flatMap(i => i.foods || [i.food]).filter(Boolean);
+/* ---------- Notes (0 à 10) et formes ---------- */
+// Une note vaut pour un aliment en général (clé « gruyere ») ou pour une de ses formes
+// (« gruyere@fondu »). Valeur : 0 à 10, ou UNSURE (« je ne sais pas encore »).
+// La note d'une forme passe avant la note générale ; ni l'une ni l'autre ne touche à la sécurité.
+export const UNSURE = 'unsure';
+export const LIKE_MIN = 7;     // à partir de 7 : « j'aime »
+export const DISLIKE_MAX = 2;  // jusqu'à 2 : « je n'aime pas », les recettes qui en contiennent sont masquées
+export const SCORES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+export const isScore = v => typeof v === 'number';
+export const rkey = (id, form) => (form ? `${id}@${form}` : id);
+export const splitKey = k => { const [id, form = null] = k.split('@'); return { id, form }; };
+export function ratingFor(ratings, id, form) {
+  if (form) { const v = ratings[rkey(id, form)]; if (v !== undefined) return v; }
+  return ratings[id];
+}
+export const scoreWord = v => (v === UNSURE ? 'Je ne sais pas encore' : !isScore(v) ? 'Pas encore noté'
+  : v === 0 ? 'Je déteste' : v <= 2 ? 'Je n’aime pas' : v <= 4 ? 'Bof' : v === 5 ? 'Neutre' : v === 6 ? 'Ça va' : v <= 8 ? 'J’aime' : 'J’adore');
+export const scoreTone = v => (v === UNSURE ? 'warn' : !isScore(v) ? '' : v >= LIKE_MIN ? 'ok' : v <= DISLIKE_MAX ? 'bad' : 'mid');
+/** Ancien avis (J'aime / J'aime pas / Je ne sais pas) → note. Une note reste telle quelle. */
+export const fromLegacy = v => (v === 'like' ? 8 : v === 'dislike' ? 2 : v === 'unsure' ? UNSURE : isScore(v) ? Math.max(0, Math.min(10, Math.round(v))) : undefined);
+export const migrateRatings = (obj = {}) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, fromLegacy(v)]).filter(([, v]) => v !== undefined));
 
+/** Toutes les formes d'un aliment (modèle de sa famille) ; vide s'il n'en a qu'une. */
+export const formsOf = id => modelForms(id, FOOD);
+/** Formes à proposer au swipe et dans Découvrir : celles qu'utilise au moins une recette du catalogue. */
+export const usedForms = id => formsOf(id).filter(x => FORM_USE[rkey(id, x.id)]);
+export const formLabel = (id, form) => formLabelOf(id, form, FOOD);
+/** « Gruyère · fondu ou gratiné », ou dans une phrase « gruyère, fondu ou gratiné » (le libellé de la
+ *  forme reste à part : « tomate cuit » ne s'accorderait pas). */
+export const foodFormName = (id, form, lower = false) => {
+  const n = FOOD[id]?.nom || id;
+  if (!form) return lower ? n.toLowerCase() : n;
+  const l = formLabel(id, form).toLowerCase();
+  return lower ? `${n.toLowerCase()}, ${l}` : `${n} · ${l}`;
+};
+
+const inferred = new WeakMap();
+/** Forme d'un aliment dans une ligne de recette : écrite dans les données, sinon déduite des étapes
+ *  (recettes importées). null : l'aliment n'a qu'une forme. */
+export function formIn(recipe, ing, id) {
+  if (ing.forms) return ing.forms[id] || null;
+  let fs = inferred.get(recipe);
+  if (!fs) {
+    fs = inferForms({ name: recipe.name, type: recipe.type, steps: recipe.steps, lines: recipe.ingredients.map(i => ({ text: i.text || i.name, foods: i.foods || [] })) }, FOOD);
+    inferred.set(recipe, fs);
+  }
+  return fs[recipe.ingredients.indexOf(ing)]?.[id] || null;
+}
+/** Forme d'un aliment dans une recette (première ligne qui le cite). */
+export function mainForm(recipe, id) {
+  const ing = recipe.ingredients.find(i => (i.foods || []).includes(id));
+  return ing ? formIn(recipe, ing, id) : null;
+}
+/** Forme d'un aliment caché dans un ingrédient composé (la tomate d'une sauce tomate). */
+const hiddenForm = id => { const fs = formsOf(id).map(x => x.id); return fs.includes('mixe') ? 'mixe' : fs.includes('incorpore') ? 'incorpore' : null; };
+
+/** Notes numériques par aliment, toutes formes confondues (pour les familles). */
+const byFoodCache = new WeakMap();
+function scoresByFood(ratings) {
+  let m = byFoodCache.get(ratings);
+  if (!m) {
+    m = new Map();
+    for (const [k, v] of Object.entries(ratings)) if (isScore(v)) { const { id } = splitKey(k); (m.get(id) || m.set(id, []).get(id)).push(v); }
+    byFoodCache.set(ratings, m);
+  }
+  return m;
+}
+const avg = a => a.reduce((s, x) => s + x, 0) / a.length;
+const affinity = v => (v - 5) / 5; // −1 (0/10) à +1 (10/10)
+
+/** Aliment qu'on n'aime sous aucune forme notée (note générale ou toutes ses formes notées 0 à 2). */
+export function foodDisliked(ratings, id) {
+  const v = [ratings[id], ...formsOf(id).map(x => ratings[rkey(id, x.id)])].filter(isScore);
+  return v.length > 0 && v.every(x => x <= DISLIKE_MAX);
+}
+
+/* ---------- Goûts ---------- */
 let siblingsIndex = null;
 let siblingsFor = null;
 /** Aliments frères : même parent dans la taxonomie. */
@@ -123,70 +198,140 @@ function siblings(id) {
   return p ? siblingsIndex.get(p) || [] : [];
 }
 
-/** Score de −100 à +100 et son détail. */
-export function foodScore(id, answers, opinions) {
-  const a = answers[id];
-  const direct = a === 'like' ? 50 : a === 'dislike' ? -50 : 0;
+/** Score d'un aliment (sous une forme) de −100 à +100, et son détail :
+ *  - la note (forme, sinon générale) : 0/10 → −60, 5/10 → 0, 10/10 → +60 ;
+ *  - les plats notés dont il est un ingrédient principal (jusqu'à ±8 chacun) ;
+ *  - sans note pour cette forme, les notes de ses autres formes (jusqu'à ±25) ;
+ *  - les aliments de la même famille (jusqu'à ±15). */
+export function foodScore(id, ratings, opinions, form = null) {
+  const rating = ratingFor(ratings, id, form);
+  const direct = isScore(rating) ? Math.round((rating - 5) * 12) : 0;
   const dishes = [];
-  // On parcourt les avis (peu nombreux), pas les 1 010 recettes
+  // On parcourt les avis (peu nombreux), pas les 1 058 recettes
   for (const [rid, op] of Object.entries(opinions)) {
     const r = RECIPE[rid];
-    if (!r || !r.main.includes(id) || (op !== 'like' && op !== 'dislike')) continue;
-    dishes.push({ name: r.name, delta: op === 'like' ? 8 : -8 });
+    if (!r || !r.main.includes(id) || !isScore(op) || op === 5) continue;
+    dishes.push({ name: r.name, value: op, delta: Math.round((op - 5) * 1.6) });
   }
-  const peers = siblings(id).filter(f => f.id !== id && (answers[f.id] === 'like' || answers[f.id] === 'dislike'));
-  const group = peers.length ? Math.round((peers.reduce((s, f) => s + (answers[f.id] === 'like' ? 1 : -1), 0) / peers.length) * 15) : 0;
-  const total = Math.max(-100, Math.min(100, direct + dishes.reduce((s, d) => s + d.delta, 0) + group));
-  return { total, direct, dishes, group, likedPeers: peers.filter(f => answers[f.id] === 'like').map(f => f.nom), parent: FOOD[FOOD[id]?.parent]?.nom };
+  const otherForms = isScore(rating) ? [] : formsOf(id).filter(x => x.id !== form && isScore(ratings[rkey(id, x.id)])).map(x => ({ form: x.id, label: x.label, value: ratings[rkey(id, x.id)] }));
+  const forms = otherForms.length ? Math.round(avg(otherForms.map(x => affinity(x.value))) * 25) : 0;
+  const scores = scoresByFood(ratings);
+  const peers = siblings(id).filter(f => f.id !== id && scores.has(f.id)).map(f => ({ nom: f.nom, value: avg(scores.get(f.id)) }));
+  const group = peers.length ? Math.round(avg(peers.map(p => affinity(p.value))) * 15) : 0;
+  const total = Math.max(-100, Math.min(100, direct + dishes.reduce((s, d) => s + d.delta, 0) + forms + group));
+  return { total, rating, direct, dishes, forms, otherForms, group, likedPeers: peers.filter(p => p.value >= LIKE_MIN).map(p => p.nom), parent: FOOD[FOOD[id]?.parent]?.nom };
 }
 
-export function recipeMatch(recipe, answers, opinions) {
-  const s = recipe.main.map(id => foodScore(id, answers, opinions).total);
-  const avg = s.reduce((a, b) => a + b, 0) / s.length;
-  const bonus = opinions[recipe.id] === 'like' ? 10 : opinions[recipe.id] === 'dislike' ? -25 : 0;
-  return Math.max(0, Math.min(100, Math.round(50 + avg * 0.6 + bonus)));
+/** « Pour vous », de 0 à 100 %. Chaque ingrédient principal compte avec le score de sa forme dans
+ *  la recette (le gruyère d'une pizza compte « fondu »), les autres ingrédients notés comptent moins.
+ *  Une note basse pèse une fois et demie plus qu'une note haute : un ingrédient qu'on n'aime pas
+ *  gâche plus un plat qu'un ingrédient aimé ne le sauve. Une note donnée au plat lui-même domine. */
+export function recipeMatch(recipe, ratings, opinions) {
+  const parts = recipe.main.map(id => [foodScore(id, ratings, opinions, mainForm(recipe, id)).total, 1]);
+  for (const ing of recipe.ingredients) for (const id of ing.foods || []) {
+    if (recipe.main.includes(id)) continue;
+    const v = ratingFor(ratings, id, formIn(recipe, ing, id));
+    if (isScore(v) && v !== 5) parts.push([(v - 5) * 12, 0.35]);
+  }
+  let sum = 0, weight = 0;
+  for (const [s, w] of parts) { const k = s < 0 ? w * 1.5 : w; sum += s * k; weight += k; }
+  let m = 50 + (weight ? sum / weight : 0) * 0.6;
+  const op = opinions[recipe.id];
+  if (isScore(op)) m = m * 0.4 + op * 10 * 0.6;
+  return Math.max(0, Math.min(100, Math.round(m)));
 }
 
-/** Aliments « je n'aime pas » présents, y compris cachés dans un ingrédient composé (sauce tomate → tomate). */
-export const dislikedIn = (recipe, answers) => [...new Set(ingredientFoods(recipe).flatMap(f => [...expand(f)]).filter(f => answers[f] === 'dislike'))].map(f => FOOD[f].nom);
-export const unknownIn = (recipe, answers) => [...new Set(recipe.main.filter(f => !answers[f]))].map(f => FOOD[f].nom);
-export const allLiked = (recipe, answers) => recipe.main.every(f => answers[f] === 'like');
+/** Aliments notés 0 à 2 (sous la forme où la recette les utilise), y compris cachés dans un
+ *  ingrédient composé (sauce tomate → tomate en sauce) ou désignés par leur famille. */
+export function dislikedIn(recipe, ratings) {
+  const out = new Map();
+  for (const ing of recipe.ingredients) for (const id of ing.foods || []) {
+    const seen = new Set();
+    const visit = (x, form) => {
+      if (!x || seen.has(x) || !FOOD[x]) return;
+      seen.add(x);
+      const v = ratingFor(ratings, x, form);
+      if (!FOOD[x].categorie && isScore(v) && v <= DISLIKE_MAX) out.set(rkey(x, form), foodFormName(x, ratings[rkey(x, form)] !== undefined ? form : null));
+      visit(FOOD[x].parent, form);
+      for (const c of FOOD[x].composants || []) visit(c, hiddenForm(c));
+    };
+    visit(id, formIn(recipe, ing, id));
+  }
+  return [...out.values()];
+}
+export const unknownIn = (recipe, ratings) => [...new Set(recipe.main.filter(f => ratingFor(ratings, f, mainForm(recipe, f)) === undefined))].map(f => FOOD[f]?.nom || f);
+export const allLiked = (recipe, ratings) => recipe.main.every(f => { const v = ratingFor(ratings, f, mainForm(recipe, f)); return isScore(v) && v >= LIKE_MIN; });
+/** Note qui s'applique à une ligne de recette, et la forme concernée (pour l'affichage). */
+export function lineRating(recipe, ing, ratings) {
+  for (const id of ing.foods || []) {
+    const form = formIn(recipe, ing, id);
+    const v = ratingFor(ratings, id, form);
+    if (v !== undefined) return { id, form, value: v, specific: !!form && ratings[rkey(id, form)] !== undefined };
+  }
+  return null;
+}
 
-/** Recettes visibles : sûres, sans aliment « je n'aime pas ». Mémorisé : recalculé seulement si
- *  le profil, les goûts ou les avis changent (1 010 recettes vérifiées à chaque fois). */
+/** Recettes visibles : sûres, sans aliment noté 0 à 2. Mémorisé : recalculé seulement si
+ *  le profil, les notes ou les avis changent (1 058 recettes vérifiées à chaque fois). */
 let memo = null;
 export function catalog(state) {
-  const { profile, answers, opinions } = state;
-  if (memo && memo.profile === profile && memo.answers === answers && memo.opinions === opinions && memo.recipes === RECIPES) return memo.value;
-  const rows = RECIPES.map(r => ({ r, check: checkRecipe(r, profile), disliked: dislikedIn(r, answers), match: recipeMatch(r, answers, opinions) }));
+  const { profile, ratings, opinions } = state;
+  if (memo && memo.profile === profile && memo.ratings === ratings && memo.opinions === opinions && memo.recipes === RECIPES) return memo.value;
+  const rows = RECIPES.map(r => ({ r, check: checkRecipe(r, profile), disliked: dislikedIn(r, ratings), match: recipeMatch(r, ratings, opinions) }));
   const value = {
     visible: rows.filter(x => x.check.safe && !x.check.unverifiable && x.disliked.length === 0).sort((a, b) => b.match - a.match),
     unverifiable: rows.filter(x => x.check.unverifiable && x.disliked.length === 0),
     excluded: rows.filter(x => !x.check.safe),
     withDisliked: rows.filter(x => x.check.safe && x.disliked.length > 0),
   };
-  memo = { profile, answers, opinions, recipes: RECIPES, value };
+  memo = { profile, ratings, opinions, recipes: RECIPES, value };
   return value;
 }
 
-/** Aliments inconnus proches des goûts, avec des recettes sûres pour les goûter.
- *  Les parcours de découverte du catalogue (niveaux 1 à 5) passent en premier, puis les recettes
- *  où l'aliment est un ingrédient principal. */
+/** Aliments (ou formes d'aliment) pas encore notés, ou marqués « je ne sais pas encore », proches
+ *  des goûts, avec des recettes sûres qui les utilisent sous cette forme. Une entrée par aliment :
+ *  sa forme la plus prometteuse. Les parcours de découverte du catalogue (niveaux 1 à 5) passent
+ *  en premier, puis les recettes où l'aliment est un ingrédient principal. */
 export function discoveries(state) {
-  const { profile, answers, opinions } = state;
+  const { profile, ratings, opinions } = state;
   const { visible } = catalog(state);
-  const byFood = new Map();
-  for (const x of visible) for (const f of new Set(ingredientFoods(x.r))) (byFood.get(f) || byFood.set(f, []).get(f)).push(x);
+  const byKey = new Map();
+  for (const x of visible) {
+    const keys = new Set();
+    for (const ing of x.r.ingredients) for (const id of ing.foods || []) {
+      const form = formIn(x.r, ing, id);
+      keys.add(rkey(id, usedForms(id).some(u => u.id === form) ? form : null));
+    }
+    for (const k of keys) (byKey.get(k) || byKey.set(k, []).get(k)).push(x);
+  }
   const rank = (x, id) => (x.r.discovery?.aliment === id ? x.r.discovery.niveau : 10) * 1000 + (x.r.main.includes(id) ? 0 : 500) - x.match;
-  return FOODS.filter(f => !answers[f.id] && byFood.has(f.id) && foodAllowed(f, profile))
-    .map(f => ({ food: f, score: foodScore(f.id, answers, opinions), recipes: [...byFood.get(f.id)].sort((a, b) => rank(a, f.id) - rank(b, f.id)).slice(0, 6) }))
-    .filter(x => x.score.total > 0)
-    .sort((a, b) => b.score.total - a.score.total);
+  const out = [];
+  for (const f of FOODS) {
+    if (!foodAllowed(f, profile)) continue;
+    const forms = usedForms(f.id);
+    let best = null;
+    for (const form of forms.length ? forms.map(x => x.id) : [null]) {
+      const v = ratingFor(ratings, f.id, form);
+      if (v !== undefined && v !== UNSURE) continue;
+      const recipes = byKey.get(rkey(f.id, form));
+      if (!recipes) continue;
+      const score = foodScore(f.id, ratings, opinions, form);
+      // Un aliment marqué « je ne sais pas » reste proposé tant que rien ne dit qu'on ne l'aimera pas
+      if (score.total <= 0 && !(v === UNSURE && score.total === 0)) continue;
+      if (!best || score.total > best.score.total) best = { food: f, form, unsure: v === UNSURE, score, recipes };
+    }
+    if (best) out.push({ ...best, recipes: [...best.recipes].sort((a, b) => rank(a, f.id) - rank(b, f.id)).slice(0, 6) });
+  }
+  return out.sort((a, b) => b.score.total - a.score.total || Number(b.unsure) - Number(a.unsure));
 }
 
 export function reasonFor(d) {
+  const liked = d.score.otherForms.filter(x => x.value >= LIKE_MIN);
+  if (liked.length) return `Vous aimez déjà ${foodFormName(d.food.id, liked[0].form, true)} (${liked[0].value}/10).`;
   if (d.score.likedPeers.length) return `Même famille que ${listFr(d.score.likedPeers.slice(0, 2).map(n => n.toLowerCase()))}, que vous aimez.`;
-  if (d.score.dishes.length) return `Dans ${d.score.dishes.length} plat${d.score.dishes.length > 1 ? 's' : ''} que vous aimez.`;
+  const dishes = d.score.dishes.filter(x => x.delta > 0);
+  if (dishes.length) return `Dans ${dishes.length} plat${dishes.length > 1 ? 's' : ''} que vous aimez.`;
+  if (d.unsure) return 'Vous ne saviez pas encore : voici de quoi goûter sans risque.';
   return `Proche de vos goûts (${(FAMILLES[d.food.famille]?.label || 'aliments').toLowerCase()}).`;
 }
 

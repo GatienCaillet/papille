@@ -172,6 +172,28 @@ input { caret-color: var(--brand); }
 .btn-sm.btn-icon { width: 34px; }
 .btn[aria-pressed="true"].op-like { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
 .btn[aria-pressed="true"].op-dislike { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+
+/* Note de 0 à 10 : rouge (0 à 2), neutre (3 à 6), vert (7 à 10) ; la note choisie est pleine */
+.scale { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.scale-row { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 3px; }
+.scale-b { height: 34px; border-radius: 8px; border: 1px solid transparent; font-size: 13px; font-weight: 680; font-variant-numeric: tabular-nums; background: var(--ground-2); color: var(--ink-2); transition: background .15s, color .15s, transform .12s; }
+.scale-b.t-bad { background: var(--bad-soft); color: var(--bad); }
+.scale-b.t-ok { background: var(--ok-soft); color: var(--ok); }
+.scale-b:hover:not(:disabled) { border-color: currentColor; }
+.scale-b:active:not(:disabled) { transform: scale(.92); }
+.scale-b[aria-checked="true"] { background: var(--ink-2); color: #fff; }
+.scale-b.t-bad[aria-checked="true"] { background: var(--bad); }
+.scale-b.t-ok[aria-checked="true"] { background: var(--ok); }
+.scale-b:disabled { opacity: .45; }
+.scale-sm .scale-b { height: 28px; font-size: 12px; border-radius: 7px; }
+.scale-lg .scale-row { gap: 4px; }
+.scale-lg .scale-b { height: 46px; font-size: 16px; border-radius: 12px; }
+.scale-ends { display: flex; justify-content: space-between; align-items: center; gap: 8px; white-space: nowrap; margin-top: -2px; }
+.scale-unsure { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 620; color: var(--ink-2); background: var(--ground-2); }
+.scale-unsure[aria-pressed="true"] { background: var(--warn-soft); color: var(--warn); }
+.t-ok { color: var(--ok); }
+.t-bad { color: var(--bad); }
+.t-warn { color: var(--warn); }
 .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 
 .chip {

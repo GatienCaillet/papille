@@ -131,9 +131,11 @@ export function ciqualTint(groupe = '') {
   return 'legume';
 }
 
-// Réponses de départ du profil de démonstration
-export const INITIAL_ANSWERS = {
-  carotte: 'like', lentille_corail: 'like', poulet: 'like', pomme: 'like', pomme_de_terre: 'like', tomate: 'like', riz: 'like', penne: 'like',
-  champignon_de_paris: 'dislike', betterave: 'dislike', endive: 'dislike', olive_noire: 'dislike',
+// Notes de départ du profil de démonstration : 0 à 10, ou « unsure » (je ne sais pas encore).
+// « aliment@forme » note une seule forme ; sans forme, la note vaut pour toutes.
+export const INITIAL_RATINGS = {
+  carotte: 8, lentille_corail: 9, poulet: 8, pomme: 8, pomme_de_terre: 8, riz: 7, penne: 8,
+  'tomate@cru': 6, 'tomate@cuit': 8, 'tomate@mixe': 9, 'gruyere@nature': 2, 'gruyere@fondu': 9, 'oignon@cru': 3, 'oignon@cuit': 8,
+  champignon_de_paris: 2, betterave: 2, endive: 1, olive_noire: 2,
   fenouil: 'unsure', aubergine: 'unsure', tofu: 'unsure',
 };

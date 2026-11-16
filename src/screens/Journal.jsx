@@ -4,7 +4,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Plus, Trash2, UtensilsCrossed } 
 import { useStore } from '../store.jsx';
 import { CIQUAL, FOODS, ciqualTint } from '../data/foods.js';
 import { RECIPE } from '../data/recipes.js';
-import { addDays, catalog, dayKey, entryVector, fmt, fmtDay, foodAllowed, journalFood, level, needs, norm, NUTRIENTS, profileComplete, sumVectors, today } from '../lib/logic.js';
+import { addDays, catalog, dayKey, entryVector, fmt, fmtDay, foodAllowed, foodDisliked, journalFood, level, needs, norm, NUTRIENTS, profileComplete, sumVectors, today } from '../lib/logic.js';
 import { Bar, FoodTile, Img, PageHeader, SearchInput, Segmented, RecipeVisual } from '../components/ui.jsx';
 import { useWatch } from '../components/Layout.jsx';
 
@@ -104,7 +104,7 @@ export default function Journal() {
     return watch.slice(0, 3).map(w => {
       // Aliments courants (présents dans les recettes), sûrs pour le profil et pas « je n'aime pas »
       // (pas les herbes ni les condiments : riches pour 100 g, mais on en mange quelques grammes)
-      const ranked = FOODS.filter(f => f.rang && f.n && f.n[w.i] != null && !['herbes-epices', 'condiments-sauces'].includes(f.famille)).filter(f => foodAllowed(f, state.profile) && state.answers[f.id] !== 'dislike').sort((a, b) => b.n[w.i] - a.n[w.i]);
+      const ranked = FOODS.filter(f => f.rang && f.n && f.n[w.i] != null && !['herbes-epices', 'condiments-sauces'].includes(f.famille)).filter(f => foodAllowed(f, state.profile) && !foodDisliked(state.ratings, f.id)).sort((a, b) => b.n[w.i] - a.n[w.i]);
       const best = ranked[0]?.n[w.i] || 0;
       return {
       ...w,

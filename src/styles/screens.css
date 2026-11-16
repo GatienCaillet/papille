@@ -109,12 +109,17 @@
 .sc-food .ftile { background: rgba(255, 255, 255, .55) !important; border-radius: 36px; }
 .sc-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); }
 .sc-title { font-size: 24px; font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
-.stamp { position: absolute; top: 22px; padding: 6px 14px; border-radius: 10px; font-size: 18px; font-weight: 760; letter-spacing: -.01em; background: #fff; box-shadow: var(--shadow-2); opacity: calc(.4 + var(--s, 0) * .6); }
+.sc-form { font-weight: 560; color: var(--ink-2); }
+.stamp { position: absolute; top: 22px; display: inline-flex; align-items: baseline; gap: 2px; padding: 6px 14px; border-radius: 10px; font-size: 16px; font-weight: 720; letter-spacing: -.01em; background: #fff; box-shadow: var(--shadow-2); opacity: calc(.4 + var(--s, 0) * .6); }
+.stamp b { font-size: 30px; font-weight: 780; line-height: 1; }
 .stamp-like { left: 20px; color: var(--ok); transform: rotate(-8deg); }
 .stamp-dislike { right: 20px; color: var(--bad); transform: rotate(8deg); }
+.stamp-mid { left: 50%; transform: translateX(-50%); color: var(--ink-2); }
 .stamp-unsure { left: 50%; transform: translateX(-50%); color: var(--warn); }
+.swipe-card.intent-mid::after { box-shadow: inset 0 0 0 4px var(--line-2); }
+.form-pick { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; }
 .swipe-hint { text-align: center; max-width: 42ch; margin: 0 auto; }
-.swipe-actions { display: flex; justify-content: center; align-items: center; gap: 22px; }
+.swipe-actions { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
 .round { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--shadow-1); transition: transform .2s var(--ease), background .2s, box-shadow .2s; }
 .round:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
 .round:active { transform: scale(.94); }
@@ -122,7 +127,7 @@
 .round-bad { color: var(--bad); }
 .round-warn { width: 54px; height: 54px; color: var(--warn); }
 .round-ok { width: 74px; height: 74px; background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
-.swipe-labels { display: grid; grid-template-columns: repeat(3, 96px); justify-content: center; gap: 0; text-align: center; color: var(--ink-2); margin-top: -8px; }
+.swipe-labels { display: flex; justify-content: space-between; color: var(--ink-2); margin-top: -10px; }
 .swipe-side { position: sticky; top: 24px; }
 .last-row { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; }
 @media (max-width: 1099px) {
@@ -136,7 +141,7 @@
 
 /* ---------- Mes goûts ---------- */
 .taste-search { position: relative; width: min(380px, 100%); }
-.taste-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.taste-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .taste-col { padding: 14px 14px 6px; background: var(--surface); }
 .taste-col > header { padding: 2px 2px 10px; border-bottom: 1px solid var(--line); }
 .taste-col .list { list-style: none; }
@@ -146,11 +151,12 @@
 .score-detail dl { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; }
 .score-detail dl > div { display: flex; justify-content: space-between; gap: 10px; color: var(--ink-2); }
 .score-detail dd { font-weight: 680; color: var(--ink); }
-.btn.ans-like[aria-pressed="true"] { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); }
-.btn.ans-dislike[aria-pressed="true"] { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
-.btn.ans-unsure[aria-pressed="true"] { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+.food-editor { display: flex; flex-direction: column; gap: 12px; }
+.form-rate { display: flex; flex-direction: column; gap: 4px; }
+.form-rate > header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .chip-scroll { display: flex; gap: 6px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px; scrollbar-width: none; }
 .chip-scroll::-webkit-scrollbar { display: none; }
+@media (max-width: 1499px) { .taste-board { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 1199px) { .taste-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 899px) {
   .taste-board { grid-template-columns: minmax(0, 1fr); }

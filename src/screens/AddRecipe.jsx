@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Clock, Download, ExternalLink, Link2, Loader2, SearchX, ShieldCheck, TriangleAlert, Users } from 'lucide-react';
 import { useStore } from '../store.jsx';
 import { FOOD } from '../data/foods.js';
-import { checkRecipe, dislikedIn, unknownIn } from '../lib/logic.js';
+import { checkRecipe, dislikedIn, formLabel, lineRating, scoreTone, unknownIn } from '../lib/logic.js';
 import { READ_SITES, SEARCH_SITES, readWeb, searchWeb, toRecipe } from '../lib/web.js';
 import { Chip, PageHeader, RecipeVisual, SearchInput, Segmented } from '../components/ui.jsx';
 
@@ -19,7 +19,7 @@ const NEG = {
 /** Vérifie une recette convertie contre le profil et les goûts. */
 function analyze(recipe, state) {
   const check = checkRecipe(recipe, state.profile);
-  return { recipe, check, disliked: dislikedIn(recipe, state.answers), unknown: unknownIn(recipe, state.answers), unrecognized: recipe.ingredients.filter(i => !i.foods.length).length };
+  return { recipe, check, disliked: dislikedIn(recipe, state.ratings), unknown: unknownIn(recipe, state.ratings), unrecognized: recipe.ingredients.filter(i => !i.foods.length).length };
 }
 
 function Badges({ a }) {
@@ -28,18 +28,21 @@ function Badges({ a }) {
     <span className="row row-wrap" style={{ gap: 4 }}>
       {a.check.unverifiable ? <span className="badge badge-bad"><TriangleAlert size={12} /> impossible à vérifier</span> : <span className="badge badge-ok"><Check size={12} /> compatible</span>}
       {a.disliked.length > 0 && <span className="badge badge-warn">je n’aime pas : {a.disliked.join(', ').toLowerCase()}</span>}
-      {a.unknown.length > 0 && <span className="badge">{a.unknown.length} inconnu{a.unknown.length > 1 ? 's' : ''} : {a.unknown.slice(0, 3).join(', ').toLowerCase()}</span>}
+      {a.unknown.length > 0 && <span className="badge">{a.unknown.length} pas encore noté{a.unknown.length > 1 ? 's' : ''} : {a.unknown.slice(0, 3).join(', ').toLowerCase()}</span>}
     </span>
   );
 }
 
-function LineMark({ ing, answers }) {
+function LineMark({ recipe, ing, ratings }) {
   if (!ing.foods.length) return <span className="badge badge-warn">non reconnu</span>;
-  const a = ing.foods.map(f => answers[f]).find(Boolean);
-  if (a === 'dislike') return <span className="badge badge-warn">je n’aime pas</span>;
-  if (a === 'like') return <span className="badge badge-ok">aimé</span>;
+  const lr = lineRating(recipe, ing, ratings);
+  if (lr && lr.value !== 'unsure') {
+    const t = scoreTone(lr.value);
+    const what = lr.form && lr.specific ? `${formLabel(lr.id, lr.form).toLowerCase()} : ` : '';
+    return <span className={`badge num ${t === 'ok' ? 'badge-ok' : t === 'bad' ? 'badge-warn' : ''}`}>{what}{lr.value}/10</span>;
+  }
   if (ing.foods.length === 1 && FOOD[ing.foods[0]]?.composants) return <span className="badge badge-brand">composé, vérifié</span>;
-  if (!a && ing.foods.length === 1 && !FOOD[ing.foods[0]]?.categorie) return <span className="badge">inconnu</span>;
+  if (!lr && ing.foods.length === 1 && !FOOD[ing.foods[0]]?.categorie) return <span className="badge">pas encore noté</span>;
   return null;
 }
 
@@ -68,7 +71,7 @@ function Preview({ a, onImport, imported }) {
           {r.ingredients.map((i, k) => (
             <li key={k} className="row between ing" style={{ gap: 8 }}>
               <span className="small">{i.text}</span>
-              <LineMark ing={i} answers={state.answers} />
+              <LineMark recipe={r} ing={i} ratings={state.ratings} />
             </li>
           ))}
         </ul>

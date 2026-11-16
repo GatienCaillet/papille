@@ -24,17 +24,17 @@ La sécurité passe avant tout : une recette est exclue si un ingrédient, même
 
 ## Operating Context
 
-Usage quotidien et court : swiper quelques cartes, choisir une recette, noter ce qu'on a mangé, cocher des articles en magasin. Données nutritionnelles issues de la table CIQUAL (ANSES). Besoins caloriques par Mifflin-St Jeor ; références par nutriment.
+Usage quotidien et court : noter quelques aliments, choisir une recette, noter ce qu'on a mangé, cocher des articles en magasin. Données nutritionnelles issues de la table CIQUAL (ANSES). Besoins caloriques par Mifflin-St Jeor ; références par nutriment.
 
 ## Capabilities and Constraints
 
 - Compte : inscription, connexion par mot de passe, déconnexion.
 - Profil : 14 allergènes UE ; régimes végétarien, végétalien, sans viande, sans porc, sans alcool, sans gluten, sans lait ; interdits en texte libre ; âge, sexe, poids, taille, activité.
-- Swipe : J'aime / Je n'aime pas / Je ne sais pas, au geste (droite, gauche, haut ou bas) ou par boutons ; 200 aliments de base puis tout CIQUAL.
-- Mes goûts : quatre listes (J'aime, Je n'aime pas, Je ne sais pas, Inconnu), ajout par recherche, score par aliment.
-- Recettes : compatibles et sans aliment « je n'aime pas », triées par goûts ; filtres texte, temps, type, origine, « que des aliments que j'aime » ; avis j'aime / j'aime pas.
+- Notation : note de 0 à 10 ou « je ne sais pas encore », au geste (glisser à droite ou à gauche, plus loin = note plus forte ; en haut ou en bas = je ne sais pas) ou par une rangée de boutons 0 à 10 ; 200 aliments de base puis tout le référentiel. Un aliment dont le goût change selon la préparation se note par forme (gruyère nature ou fondu, tomate crue, cuite ou en sauce…), ou d'un coup pour toutes ses formes ; une note générale peut ensuite être affinée forme par forme.
+- Mes goûts : cinq listes (J'aime 7 à 10, Mitigé 3 à 6, Je n'aime pas 0 à 2, Je ne sais pas encore, Pas encore noté), notation par recherche, fiche par aliment avec une note par forme et le détail du score.
+- Recettes : compatibles et sans ingrédient noté 0 à 2 sous la forme où la recette l'utilise (le gruyère fondu d'une pizza n'est pas le gruyère en morceau), triées par goûts ; filtres texte, temps, type, origine, « que des aliments que j'aime » ; note du plat de 0 à 10.
 - Recherche web avec contraintes du profil ajoutées à la requête ; signale les aliments inconnus ou non aimés.
-- Découvrir : aliments inconnus proches des goûts, puis recettes pour les goûter.
+- Découvrir : aliments ou formes pas encore notés, ou marqués « je ne sais pas encore », proches des goûts, puis recettes qui les utilisent sous cette forme.
 - Journal : aliment en grammes ou recette en portions ; tableau du jour et moyenne 7 jours ; encadré « À surveiller » sous 70 % du besoin.
 - Courses : ingrédients de recettes ajustés aux portions et fusionnés, articles manuels, rayons, liste « toujours acheter », vider les cochés.
 - Non décidé : source exacte des 200 aliments de base, moteur de recherche web utilisé.
@@ -50,10 +50,11 @@ Aucune donnée réelle pour l'instant : la maquette utilise un profil et des rec
 ## Product Principles
 
 1. La sécurité alimentaire n'est jamais un réglage caché : ce qui est exclu, et pourquoi, reste lisible.
-2. Une réponse en un geste : noter un goût, ajouter au journal, cocher un article.
+2. Une réponse en un geste : noter un goût (un glissé ou un toucher), ajouter au journal, cocher un article.
 3. Le téléphone est l'outil principal ; l'ordinateur donne la vue d'ensemble.
 4. Les goûts guident, ils n'enferment pas : Découvrir pousse vers l'inconnu proche.
+5. Les goûts ne touchent jamais à la sécurité : une note, même 10, ne rend pas sûr un aliment interdit.
 
 ## Accessibility & Inclusion
 
-Les informations de sécurité ne reposent jamais sur la couleur seule (icône + texte). Swipe toujours doublé par des boutons.
+Les informations de sécurité ne reposent jamais sur la couleur seule (icône + texte). Swipe toujours doublé par des boutons (0 à 10, « je ne sais pas encore ») et par le clavier ; chaque note est écrite en chiffres, pas seulement en couleur.

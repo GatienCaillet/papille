@@ -1,11 +1,12 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Apple, Bean, Candy, Carrot, Clock, Droplet, Drumstick, Fish, Flame, Leaf, Milk, Minus, Plus, Salad, Search, Soup, Sprout, TriangleAlert, Wheat, X } from 'lucide-react';
+import { Apple, Bean, Candy, Carrot, Clock, Droplet, Drumstick, Fish, Flame, HelpCircle, Leaf, Milk, Minus, Plus, Salad, Search, Soup, Sprout, TriangleAlert, Wheat, X } from 'lucide-react';
 import { FAMILLES, FOOD, IMAGES, imageOf, imageOfCiqual } from '../data/foods.js';
 
 const Icons = { Apple, Bean, Candy, Carrot, Droplet, Drumstick, Fish, Leaf, Milk, Salad, Soup, Sprout, Wheat };
 const TINT_ICON = { legume: 'Carrot', fruit: 'Apple', feculent: 'Wheat', legumineuse: 'Bean', viande: 'Drumstick', poisson: 'Fish', laitier: 'Milk', epice: 'Leaf', sauce: 'Soup', sucre: 'Candy', gras: 'Droplet' };
 import { photo } from '../data/recipes.js';
 import { useStore } from '../store.jsx';
+import { isScore, SCORES, scoreTone, scoreWord, UNSURE } from '../lib/logic.js';
 
 export function PageHeader({ title, sub, actions }) {
   return (
@@ -101,6 +102,38 @@ export function FoodTile({ food, code, tint, size = 44 }) {
 export function Score({ value }) {
   const cls = value > 0 ? 'badge-ok' : value < 0 ? 'badge-bad' : '';
   return <span className={`badge num ${cls}`}>{value > 0 ? '+' : ''}{value}</span>;
+}
+
+/** Note de 0 à 10 en un toucher, et « je ne sais pas encore ». Toucher la note déjà donnée l'efface
+ *  (onChange(null)). size : 'sm' (listes, cartes), 'md', 'lg' (swipe). */
+export function RatingScale({ value, onChange, size = 'md', unsure = true, label = 'Note sur 10', disabled }) {
+  const pick = v => onChange(value === v ? null : v);
+  return (
+    <div className={`scale scale-${size}`}>
+      <div className="scale-row" role="radiogroup" aria-label={label}>
+        {SCORES.map(n => (
+          <button key={n} type="button" role="radio" aria-checked={value === n} disabled={disabled}
+            aria-label={`${n} sur 10, ${scoreWord(n).toLowerCase()}`} title={scoreWord(n)}
+            className={`scale-b t-${scoreTone(n)}`} onClick={() => pick(n)}>{n}</button>
+        ))}
+      </div>
+      {size !== 'lg' && <div className="scale-ends xs muted" aria-hidden="true"><span>0 · je n’aime pas</span><span>10 · j’adore</span></div>}
+      {size !== 'lg' && unsure && (
+        <button type="button" className="scale-unsure" aria-pressed={value === UNSURE} disabled={disabled} onClick={() => pick(UNSURE)}><HelpCircle size={13} /> Je ne sais pas encore</button>
+      )}
+    </div>
+  );
+}
+
+/** Note affichée : « 8/10 », « ? » pour je ne sais pas encore, rien si pas notée (sauf `empty`). */
+export function RatingBadge({ value, prefix, empty }) {
+  if (value === undefined || value === null) return empty ? <span className="badge">{prefix ? `${prefix} : ` : ''}{empty}</span> : null;
+  const t = scoreTone(value);
+  return (
+    <span className={`badge num ${t === 'ok' ? 'badge-ok' : t === 'bad' ? 'badge-bad' : t === 'warn' ? 'badge-warn' : ''}`} title={scoreWord(value)}>
+      {prefix ? `${prefix} : ` : ''}{isScore(value) ? `${value}/10` : 'je ne sais pas'}
+    </span>
+  );
 }
 
 export function Bar({ pct, tone }) {

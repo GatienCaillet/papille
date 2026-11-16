@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Clock, Compass, ExternalLink, Flame, FlaskConical, Heart, NotebookPen, ShieldCheck, ShoppingBasket, Sparkles, ThumbsDown, Trash2, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Clock, Compass, ExternalLink, Flame, FlaskConical, NotebookPen, ShieldCheck, ShoppingBasket, Sparkles, Trash2, TriangleAlert } from 'lucide-react';
 import { useStore } from '../store.jsx';
 import { RECIPE } from '../data/recipes.js';
 import { FOOD } from '../data/foods.js';
-import { checkRecipe, dayKey, fmt, fmtQty, listFr, needs, NUTRIENTS, recipeMatch, today } from '../lib/logic.js';
-import { RecipeVisual, recipeImage, Stepper } from '../components/ui.jsx';
+import { checkRecipe, dayKey, fmt, fmtQty, formIn, formLabel, isScore, LIKE_MIN, lineRating, listFr, needs, NUTRIENTS, recipeMatch, today } from '../lib/logic.js';
+import { RatingBadge, RatingScale, RecipeVisual, recipeImage, Stepper } from '../components/ui.jsx';
 
-function Mark({ ing, answers }) {
+/** Note qui compte pour cette ligne, sous la forme où la recette utilise l'aliment (« fondu ou gratiné : 9/10 »). */
+function Mark({ r, ing, ratings }) {
   const foods = ing.foods || [];
   if (!foods.length) return <span className="badge badge-bad"><TriangleAlert size={12} /> non vérifiable</span>;
   if (foods.length === 1 && FOOD[foods[0]]?.composants) return <span className="badge badge-brand">composé, vérifié</span>;
-  const a = foods.map(f => answers[f]).find(Boolean);
-  if (a === 'like') return <span className="badge badge-ok"><Heart size={11} /> aimé</span>;
-  if (a === 'unsure') return <span className="badge badge-warn">pas sûr</span>;
-  if (foods.length === 1 && FOOD[foods[0]] && !FOOD[foods[0]].categorie && !a) return <span className="badge">inconnu</span>;
+  const lr = lineRating(r, ing, ratings);
+  const form = formIn(r, ing, foods[0]);
+  const label = form ? formLabel(foods[0], form).toLowerCase() : null;
+  if (lr) return <RatingBadge value={lr.value} prefix={lr.form && lr.specific ? formLabel(lr.id, lr.form).toLowerCase() : undefined} />;
+  if (foods.length === 1 && FOOD[foods[0]] && !FOOD[foods[0]].categorie) return <span className="badge">{label ? `${label} : ` : ''}pas encore noté</span>;
   return null;
 }
 
@@ -32,7 +34,7 @@ export default function RecipeDetail() {
   if (!r) return <div className="card empty"><b>Cette recette n’existe pas.</b><Link className="btn btn-sm" to="/recettes">Retour aux recettes</Link></div>;
 
   const check = checkRecipe(r, state.profile);
-  const match = recipeMatch(r, state.answers, state.opinions);
+  const match = recipeMatch(r, state.ratings, state.opinions);
   const ref = needs(state.profile);
   const op = state.opinions[r.id];
   const k = portions / r.portions;
@@ -41,7 +43,9 @@ export default function RecipeDetail() {
 
   const setOp = v => {
     opinion(r.id, v);
-    if (op !== v) notify(v === 'like' ? `Noté : vous aimez. ${listFr(r.main.map(m => FOOD[m]?.nom.toLowerCase()).filter(Boolean))} montent.` : 'Noté : vous n’aimez pas ce plat.');
+    const mains = listFr(r.main.map(m => FOOD[m]?.nom.toLowerCase()).filter(Boolean));
+    if (isScore(v)) notify(`Plat noté ${v}/10.${v >= LIKE_MIN ? ` ${mains} montent.` : v <= 3 ? ` ${mains} baissent un peu.` : ''}`);
+    else notify('Note du plat effacée.');
   };
 
   const safety = !check.safe ? (
@@ -106,10 +110,9 @@ export default function RecipeDetail() {
             <div><Flame size={17} /><b className="num">{r.nutritionUnsure ? '—' : `${Math.round(r.n[0])} kcal`}</b><span>par portion (estimé)</span></div>
             <div><Sparkles size={17} /><b className="num">{match} %</b><span>pour vous</span></div>
           </div>
-          <div className="row" style={{ gap: 8 }}>
-            <span className="small muted">Votre avis</span>
-            <button type="button" className="btn btn-sm op-like" aria-pressed={op === 'like'} onClick={() => setOp('like')}><Heart size={15} /> J’aime</button>
-            <button type="button" className="btn btn-sm op-dislike" aria-pressed={op === 'dislike'} onClick={() => setOp('dislike')}><ThumbsDown size={15} /> J’aime pas</button>
+          <div className="stack" style={{ gap: 6, maxWidth: 420 }}>
+            <span className="row between small"><span className="muted">Votre note du plat</span><RatingBadge value={op} /></span>
+            <RatingScale size="sm" unsure={false} value={op} onChange={setOp} label="Votre note du plat" />
           </div>
           {safety}
           {r.discovery && (
@@ -134,7 +137,7 @@ export default function RecipeDetail() {
               {r.ingredients.map((i, n) => (
                 <li key={n} className="ing">
                   <div className="row between" style={{ gap: 10 }}>
-                    <span className="row row-wrap" style={{ gap: 8 }}>{i.name}{i.optional && <span className="xs muted">(facultatif)</span>} <Mark ing={i} answers={state.answers} /></span>
+                    <span className="row row-wrap" style={{ gap: 8 }}>{i.name}{i.optional && <span className="xs muted">(facultatif)</span>} <Mark r={r} ing={i} ratings={state.ratings} /></span>
                     {i.qty != null && <span className="small muted num nowrap">{fmtQty(i.qty * k, i.unit)}</span>}
                   </div>
                   {contents(i) && <span className="xs muted">Contient : {contents(i)}</span>}
