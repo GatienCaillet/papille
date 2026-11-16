@@ -37,7 +37,7 @@ Le dossier contient la table « Table Ciqual 2025_FR_2025_11_03.xlsx » décompr
 ## Supabase
 
 - Projet `eccernutbnunvydpfybt`. Schéma : `supabase/migrations/`.
-- Notes de goût : tables `food_ratings` (aliment, forme, note 0 à 10 ; forme vide = toutes les formes ; note nulle = « je ne sais pas encore ») et `recipe_ratings`. La migration `20261116140000_papille_ratings.sql` les crée, y recopie les anciens avis (J'aime → 8, J'aime pas → 2, Je ne sais pas → note nulle) et garde `food_answers` / `recipe_opinions` synchronisées vers les nouvelles tables le temps que toutes les versions de l'app soient à jour. **À appliquer avant de publier cette version de l'app** (elle lit les nouvelles tables). La démo convertit de même les avis gardés dans le navigateur.
+- Notes de goût : tables `food_ratings` (aliment, forme, note 0 à 10 ; forme vide = toutes les formes ; note nulle = « je ne sais pas encore ») et `recipe_ratings`. La migration `20261116130902_papille_ratings.sql` les crée, y recopie les anciens avis (J'aime → 8, J'aime pas → 2, Je ne sais pas → note nulle) et garde `food_answers` / `recipe_opinions` synchronisées vers les nouvelles tables le temps que toutes les versions de l'app soient à jour. Appliquée le 16/11/2026. La démo convertit de même les avis gardés dans le navigateur.
 - La clé publiable est dans `src/lib/supabase.js` : elle est publique par conception, la sécurité repose sur les règles RLS.
 - Réglages à faire dans le tableau de bord (Authentication → URL Configuration) : Site URL `https://gatiencaillet.github.io/papille/`, Redirect URLs `https://gatiencaillet.github.io/papille/**` et `http://localhost:5173/papille/**`.
 

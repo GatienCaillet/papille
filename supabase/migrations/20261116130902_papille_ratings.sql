@@ -1,6 +1,5 @@
 -- Papille : notes de 0 à 10 par aliment et par forme, à la place de J'aime / J'aime pas.
--- Pas encore appliquée en production (projet eccernutbnunvydpfybt) : l'appliquer AVANT de publier
--- la version de l'app qui lit food_ratings et recipe_ratings.
+-- Appliquée sur le projet eccernutbnunvydpfybt le 16/11/2026 (82 notes d'aliments et 62 notes de plats reprises).
 --
 -- Une note vaut pour un aliment en général (form = '') ou pour une de ses formes (cru, cuit,
 -- fondu…). score null = « je ne sais pas encore ». La vérification de sécurité (allergies,

@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 import { rkey, UNSURE } from './logic.js';
 
-// Note : 0 à 10, ou null en base pour « je ne sais pas encore » (migration 20261116140000_papille_ratings)
+// Note : 0 à 10, ou null en base pour « je ne sais pas encore » (migration 20261116130902_papille_ratings)
 const toScore = v => (v === null || v === undefined ? UNSURE : Number(v));
 const toDb = v => (v === UNSURE ? null : v);
 const num = v => (v === null || v === undefined ? '' : Number(v));
